@@ -1,4 +1,5 @@
 #include <FastLED.h>
+#include <stdlib.h>
 #define NUM_LEDS 16
 #define LED_PIN 2
 #define CYCLE_RATE 100
@@ -7,6 +8,9 @@
 #define PI 3.14
 
 CRGB leds[NUM_LEDS];
+enum direction {
+  FORWARD, BACKWARD
+};
 
 void setup () {
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
@@ -14,16 +18,16 @@ void setup () {
   delay(2000);
 }
 
-void dim_leds () {
+void dim_leds (int fade_rate = 100) {
   for (auto &i:leds) {
-    i.fadeLightBy( 100 );
+    i.fadeLightBy( fade_rate );
   }
 
   FastLED.show();
 }
 
 void projectile_animation (
-  const char* direction = "forward",
+  enum direction direct = FORWARD,
   fl::u32 color = DEFAULT_COLOR,
   int cycle_rate = CYCLE_RATE
 ) { 
@@ -32,7 +36,7 @@ void projectile_animation (
   int start;
   int end;
 
-  if (strcmp(direction, "backward") == 0) {
+  if (direct == BACKWARD) {
     dir = -1; 
     start = NUM_LEDS - 1;
     end = 0;
@@ -54,14 +58,45 @@ void bouncing_animation (
   fl::u32 color = DEFAULT_COLOR,
   int cycle_rate = CYCLE_RATE
 ) {
-  projectile_animation("forward", color, cycle_rate);
-  projectile_animation("backward", color, cycle_rate);
+  projectile_animation(FORWARD, color, cycle_rate);
+  projectile_animation(BACKWARD, color, cycle_rate);
+}
+
+void light_chunk_at_interval(
+  bool even = true,
+  int chunk = 3,
+  fl::u32 color = DEFAULT_COLOR
+) {
+
+  for(int i = 0; i < NUM_LEDS; i++){
+    if(i != 0 && i % chunk == 0) even = !even;
+    if(even) leds[i] = DEFAULT_COLOR;
+    else leds[i] = CRGB::Black; 
+  }
+  FastLED.show();
+}
+
+void shifting_animation(
+  int cycle_rate = CYCLE_RATE * 4
+) {
+  for (int i = 0; i < 6; i++){
+    if(i % 2 == 0) light_chunk_at_interval();
+    else light_chunk_at_interval(false);
+    delay(cycle_rate);
+  }
+}
+
+fl::u32 rand_color(){
+  int colors_size = 6;
+  fl::u32 colors[] = {CRGB::Red, CRGB::DarkOrange, CRGB::Green, CRGB::HotPink, CRGB::Blue, CRGB::Purple};
+  int i = rand() % (colors_size + 1); 
+  return colors[i];
 }
 
 void twinkle_animation (
   int spacing = 4, 
   fl::u32 color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE*2
+  int cycle_rate = CYCLE_RATE / 4
 ) {
   int index = 0;  
   int tracker = 0;
@@ -71,14 +106,15 @@ void twinkle_animation (
     tracker = i * spacing;
     offset = floor(tracker / NUM_LEDS);
     index = tracker % NUM_LEDS + offset; 
-    leds[index] = color;
+    leds[index] = rand_color();
+    //leds[index] = DEFAULT_COLOR;
     FastLED.show();
     delay(cycle_rate);
-    dim_leds();
+    dim_leds(40);
   } 
 }
 
-void heartbeat_animation (
+void heartbeat_animation ( // UNUSED
   // char preset = "slow", 
   // fl::u32 color = CRGB::Red, 
   fl::u32 color = DEFAULT_COLOR, 
@@ -124,7 +160,7 @@ void pulse_animation (
   // for (int i = 0, )
 }
 
-void progress_bar (
+void progress_bar ( // SO FAR UNUSED
   float progress,
   char direction = "left", 
   bool inverted = false, 
@@ -174,40 +210,43 @@ void progress_bar_animation (
 
 
 void loop () {
-  
-  // projectile_animation("backward");
-  // bouncing_animation();
-  // twinkle_animation();
+  // CMD 1: Drive to World Waypoint (Driving)
+  shifting_animation();
+  shifting_animation();
+  delay(300); 
 
-  // heartbeat_animation();
-  // pulse_animation(true);
-  pulse_animation();
-  // progress_bar(0.70);
-  // progress_bar_animation();
+  // CMD 3: Idle / Standby
+  pulse_animation(true);
+  pulse_animation(true);
+  delay(300); 
 
-  // leds[0] = CRGB::Red;
-  // leds[0].maximizeBrightness();
-  // FastLED.show();
+  // CMD 2: Drive to World Waypoint (Seeking)
+  shifting_animation();
+  projectile_animation(BACKWARD, CRGB::DeepPink); // DeepPink
+  shifting_animation();
+  projectile_animation(BACKWARD, CRGB::DeepPink); // DeepPink
+  delay(300); 
 
-  // for (int i =  0; i < 20; i++) {
-  //   leds[0].fadeLightBy( 32 );
-  //   FastLED.show();
-  //   delay(50); 
-  // } 
+  // CMD 4: Track Object Waypoint (Tracking)
+  bouncing_animation(CRGB::Gold); // DarkOrange
+  bouncing_animation(CRGB::Gold); // DarkOrange
+  delay(300);
 
-  // for (int i =  0; i < 20; i++) {
-  //   // leds[0].LightBy( -64 );
-  //   leds[0] += CRGB( 10, 0, 0);
-  //   leds[0] *= 1.125;
-  //   FastLED.show();
-  //   delay(50); 
-  // } 
-
-  // leds[0] = CRGB::Red;
-  // leds[1] = CRGB::Green;
-  // leds[2] = CRGB::Blue;
+  // CMD 5: Trick
+  twinkle_animation();
+  twinkle_animation();
+  twinkle_animation();
+  twinkle_animation();
+  delay(300);
 
 
+  /**break sequence idea 1
+    * if read from serial detects new command.. break for loop
+    * send new command??
+  **/
 
-  // FastLED.show();
+  /**break sequence idea 2
+    * thread 1: keeps track of commands
+    * thread 2: executes commands
+  **/
  }
