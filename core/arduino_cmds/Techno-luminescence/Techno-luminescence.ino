@@ -1,6 +1,6 @@
 #include <FastLED.h>
 #include <stdlib.h>
-#define NUM_LEDS 16
+#define NUM_LEDS 24
 #define LED_PIN 2
 #define CYCLE_RATE 100
 #define DEFAULT_COLOR CRGB::White
@@ -62,26 +62,22 @@ void bouncing_animation (
   projectile_animation(BACKWARD, color, cycle_rate);
 }
 
-void light_chunk_at_interval(
-  bool even = true,
-  int chunk = 3,
+void light_at_pos(
+  int lit_position = 0,
   fl::u32 color = DEFAULT_COLOR
 ) {
-
   for(int i = 0; i < NUM_LEDS; i++){
-    if(i != 0 && i % chunk == 0) even = !even;
-    if(even) leds[i] = DEFAULT_COLOR;
+    if(((i - lit_position) % 4) == 0) leds[i] = DEFAULT_COLOR;
     else leds[i] = CRGB::Black; 
   }
   FastLED.show();
 }
 
 void shifting_animation(
-  int cycle_rate = CYCLE_RATE * 4
+  int cycle_rate = CYCLE_RATE * 1.5
 ) {
-  for (int i = 0; i < 6; i++){
-    if(i % 2 == 0) light_chunk_at_interval();
-    else light_chunk_at_interval(false);
+  for (int i = 0; i < 12; i++){
+    light_at_pos(i);
     delay(cycle_rate);
   }
 }
@@ -94,6 +90,7 @@ fl::u32 rand_color(){
 }
 
 void twinkle_animation (
+  bool default_color = false,
   int spacing = 4, 
   fl::u32 color = DEFAULT_COLOR, 
   int cycle_rate = CYCLE_RATE / 4
@@ -106,8 +103,8 @@ void twinkle_animation (
     tracker = i * spacing;
     offset = floor(tracker / NUM_LEDS);
     index = tracker % NUM_LEDS + offset; 
-    leds[index] = rand_color();
-    //leds[index] = DEFAULT_COLOR;
+    if(!default_color) leds[index] = rand_color();
+    else leds[index] = DEFAULT_COLOR;
     FastLED.show();
     delay(cycle_rate);
     dim_leds(40);
@@ -191,11 +188,10 @@ void progress_bar ( // SO FAR UNUSED
   delay(10);
 }
 
-
 void progress_bar_animation (
   char direction = "center", 
   bool inverted = false, 
-  fl::u32 color = DEFAULT_COLOR, 
+  fl::u32 primary_color = DEFAULT_COLOR, 
   int cycle_rate = CYCLE_RATE/16
 ) {
   for (int i = 0; i < 100; i++) {
@@ -208,10 +204,63 @@ void progress_bar_animation (
   }
 }
 
+void center_in_out_animation(
+  fl::u32 primary_color = DEFAULT_COLOR, 
+  fl::u32 secondary_color = DEFAULT_COLOR, 
+  int cycle_rate = CYCLE_RATE / 2
+){
+  for(int i = 0; i < NUM_LEDS / 2; i++){
+    leds[i] = primary_color;
+    leds[NUM_LEDS - i] = secondary_color;
+    FastLED.show();
+    delay(cycle_rate);
+    leds[i] = CRGB::Black;
+    leds[NUM_LEDS - i] = CRGB::Black;
+    FastLED.show();
+  }
+
+  int middle = NUM_LEDS / 2;
+
+  for(int i = 0; i < NUM_LEDS / 2; i++){
+    leds[middle - i] = secondary_color;
+    leds[middle + i] = primary_color;
+    FastLED.show();
+    delay(cycle_rate);
+    leds[middle - i] = CRGB::Black;
+    leds[middle + i] = CRGB::Black;
+    FastLED.show();
+  }
+}
+
+void toggle_animation(
+  fl::u32 primary_color = CRGB::DeepPink, 
+  int cycle_rate = CYCLE_RATE * 2
+){
+  for(int i = 0; i < NUM_LEDS - 1; i++){
+   if(i % 4 == 0){
+    leds[i + 1] = CRGB::Black;
+    leds[i] = primary_color;
+   }
+ }
+ FastLED.show();
+ delay(cycle_rate);
+ 
+ for(int i = 1; i < NUM_LEDS; i++){
+  if(((i - 1) % 4) == 0){
+    leds[i - 1] = CRGB::Black;
+    leds[i] = primary_color;
+  }
+ }
+ FastLED.show();
+ delay(cycle_rate);
+}
+
+
 
 void loop () {
+  
   // CMD 1: Drive to World Waypoint (Driving)
-  shifting_animation();
+  shifting_animation(); 
   shifting_animation();
   delay(300); 
 
@@ -221,15 +270,22 @@ void loop () {
   delay(300); 
 
   // CMD 2: Drive to World Waypoint (Seeking)
+  toggle_animation();
+  toggle_animation();
   shifting_animation();
-  projectile_animation(BACKWARD, CRGB::DeepPink); // DeepPink
+  toggle_animation();
+  toggle_animation();
   shifting_animation();
-  projectile_animation(BACKWARD, CRGB::DeepPink); // DeepPink
+
   delay(300); 
 
   // CMD 4: Track Object Waypoint (Tracking)
-  bouncing_animation(CRGB::Gold); // DarkOrange
-  bouncing_animation(CRGB::Gold); // DarkOrange
+  center_in_out_animation();
+  center_in_out_animation();
+  twinkle_animation(true);
+  center_in_out_animation();
+  center_in_out_animation();
+  twinkle_animation(true);
   delay(300);
 
   // CMD 5: Trick
