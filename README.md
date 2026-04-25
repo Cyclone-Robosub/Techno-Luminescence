@@ -20,7 +20,12 @@ By using two LED strips affixed to the sides of the AUV hull, we can use differe
 
 2. **Sequences must be visually distinct from each other in shape, speed, and color.** The familiar user should never confuse one sequences for another during normal operations. 
 
-3. **Sequences must not solely rely on color to communicate information.** Color can be used to _emphasize_ a pattern's intent, but different sequences must be different only by the basis of color. This is especially important given the discoloring effects of underwater environments. 
+3. **Sequences must not solely rely on color to communicate information.** Color can be used to _emphasize_ a pattern's intent, but it must not be the only differentiating factor. This is especially important given the discoloring effects of underwater environments. 
+
+## Implementation
+We will use the FastLED library for controlling LED strips. Using ROS, will we track the state of the AUV, and switch between patterns when the state is updated.
+
+We will use a separate ESP-32 microprocessor so that if the main board goes offline, we can detect and display that.  
 
 
 ## References
