@@ -1,7 +1,8 @@
 #include <FastLED.h>
 #include <stdlib.h>
 #define NUM_LEDS 24
-#define LED_PIN 2
+#define LED_PIN 12 //working with esp32
+//#define LED_PIN 2 //working with arduino uno
 #define CYCLE_RATE 100
 #define DEFAULT_COLOR CRGB::White
 #define MAX_INTENSITY 20
@@ -111,25 +112,6 @@ void twinkle_animation (
   } 
 }
 
-void heartbeat_animation ( // UNUSED
-  // char preset = "slow", 
-  // fl::u32 color = CRGB::Red, 
-  fl::u32 color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE * 8
-) {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = color; 
-  }
-  FastLED.show(); 
-  delay(cycle_rate);
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::Black; 
-  }
-  FastLED.show(); 
-  delay(cycle_rate);
-}
-
 void pulse_animation (
   bool inverted = false, 
   fl::u32 color = DEFAULT_COLOR, 
@@ -157,53 +139,6 @@ void pulse_animation (
   // for (int i = 0, )
 }
 
-void progress_bar ( // SO FAR UNUSED
-  float progress,
-  char direction = "left", 
-  bool inverted = false, 
-  fl::u32 color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE
-) {
-  fl::u32 primary_color;
-  fl::u32 secondary_color;
-
-  if (inverted) {
-    primary_color = CRGB::Black;
-    secondary_color = color; 
-  } else {
-    primary_color = color;
-    secondary_color = CRGB::Black; 
-  }
-
-  int led_threshold = floor(NUM_LEDS * progress);
-
-  for (int i = 0; i < led_threshold; i++) {
-    leds[i] = primary_color; 
-  }
-
-  for (int i = led_threshold; i < NUM_LEDS; i++) {
-    leds[i] = secondary_color; 
-  }
-  FastLED.show(); 
-  delay(10);
-}
-
-void progress_bar_animation (
-  char direction = "center", 
-  bool inverted = false, 
-  fl::u32 primary_color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE/16
-) {
-  for (int i = 0; i < 100; i++) {
-    progress_bar(i * 0.01);
-    delay(cycle_rate);
-  }
-  for (int i = 0; i < 100; i++) {
-    progress_bar(i * 0.01, "left", true);
-    delay(cycle_rate);
-  }
-}
-
 void center_in_out_animation(
   fl::u32 primary_color = DEFAULT_COLOR, 
   fl::u32 secondary_color = DEFAULT_COLOR, 
@@ -228,6 +163,33 @@ void center_in_out_animation(
     delay(cycle_rate);
     leds[middle - i] = CRGB::Black;
     leds[middle + i] = CRGB::Black;
+    FastLED.show();
+  }
+}
+
+void center_in_trailing_out(
+  fl::u32 primary_color = DEFAULT_COLOR, 
+  int cycle_rate = CYCLE_RATE
+){
+  // delay = cycle_rate * 1 / (i^3)
+  for(int i = 0; i <= NUM_LEDS / 2; i++){
+    leds[i] = primary_color;
+    leds[NUM_LEDS - i] = primary_color;
+    //delay(cycle_rate * cos(i * PI / NUM_LEDS));
+    delay((cycle_rate / 2) + (cycle_rate * 1 / (i * i * i * 2)));
+    FastLED.setBrightness((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4));
+    FastLED.show();
+  }
+
+  delay(cycle_rate * 2);
+  int middle = NUM_LEDS / 2;
+
+  for(int i = 0; i < NUM_LEDS / 2; i++){
+    leds[middle - i] = CRGB::Black;
+    leds[middle + i] = CRGB::Black;
+    delay((2 * cycle_rate / 3) - (2 * cycle_rate * i / (NUM_LEDS * 3)));
+    //delay((cycle_rate / 2) + (cycle_rate * 1 / (i * i * i * 2)));
+    FastLED.setBrightness(MAX_INTENSITY - ((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4)));
     FastLED.show();
   }
 }
@@ -259,41 +221,42 @@ void toggle_animation(
 
 void loop () {
   
-  // CMD 1: Drive to World Waypoint (Driving)
-  shifting_animation(); 
-  shifting_animation();
-  delay(300); 
+//  // CMD 1: Drive to World Waypoint (Driving)
+//  shifting_animation(); 
+//  shifting_animation();
+//  delay(300); 
+//
+//  // CMD 3: Idle / Standby
+//  pulse_animation(true);
+//  pulse_animation(true);
+//  delay(300); 
 
-  // CMD 3: Idle / Standby
-  pulse_animation(true);
-  pulse_animation(true);
-  delay(300); 
+//  // CMD 2: Drive to World Waypoint (Seeking)
+//  shifting_animation();
+//  center_in_out_animation();
+//  center_in_out_animation();
+//  shifting_animation();
+//  toggle_animation();
+//  toggle_animation();
 
-  // CMD 2: Drive to World Waypoint (Seeking)
-  toggle_animation();
-  toggle_animation();
-  shifting_animation();
-  toggle_animation();
-  toggle_animation();
-  shifting_animation();
+//  delay(300); 
 
-  delay(300); 
-
-  // CMD 4: Track Object Waypoint (Tracking)
-  center_in_out_animation();
-  center_in_out_animation();
-  twinkle_animation(true);
-  center_in_out_animation();
-  center_in_out_animation();
-  twinkle_animation(true);
-  delay(300);
-
-  // CMD 5: Trick
-  twinkle_animation();
-  twinkle_animation();
-  twinkle_animation();
-  twinkle_animation();
-  delay(300);
+//  // CMD 4: Track Object Waypoint (Tracking)
+  center_in_trailing_out();
+//  center_in_out_animation();
+//  center_in_out_animation();
+//  twinkle_animation(true);
+//  center_in_out_animation();
+//  center_in_out_animation();
+//  twinkle_animation(true);
+//  delay(300);
+//
+//  // CMD 5: Trick
+//  twinkle_animation();
+//  twinkle_animation();
+//  twinkle_animation();
+//  twinkle_animation();
+//  delay(300);
 
 
   /**break sequence idea 1
