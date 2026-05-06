@@ -1,12 +1,14 @@
 #include <FastLED.h>
 #include <stdlib.h>
+
+
 #define NUM_LEDS 24
 #define LED_PIN 12 //working with esp32
 //#define LED_PIN 2 //working with arduino uno
 #define CYCLE_RATE 100
 #define DEFAULT_COLOR CRGB::White
 #define MAX_INTENSITY 20
-#define PI 3.14
+// #define PI 3.14
 
 CRGB leds[NUM_LEDS];
 enum direction {
@@ -14,7 +16,7 @@ enum direction {
 };
 
 void setup () {
-  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(MAX_INTENSITY);
   delay(2000);
 }
@@ -176,8 +178,11 @@ void center_in_trailing_out(
     leds[i] = primary_color;
     leds[NUM_LEDS - i] = primary_color;
     //delay(cycle_rate * cos(i * PI / NUM_LEDS));
-    delay((cycle_rate / 2) + (cycle_rate * 1 / (i * i * i * 2)));
+//   / delay((cycle_rate / 2) + (cycle_rate * 1 / (i * i * i * 2)));
     FastLED.setBrightness((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4));
+    if(i == 0) delay(cycle_rate);
+    else delay((cycle_rate/2.0) + (cycle_rate / (i * i * i * 2.0)));
+    //delay(cycle_rate);
     FastLED.show();
   }
 
@@ -189,6 +194,7 @@ void center_in_trailing_out(
     leds[middle + i] = CRGB::Black;
     delay((2 * cycle_rate / 3) - (2 * cycle_rate * i / (NUM_LEDS * 3)));
     //delay((cycle_rate / 2) + (cycle_rate * 1 / (i * i * i * 2)));
+    //delay(cycle_rate);
     FastLED.setBrightness(MAX_INTENSITY - ((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4)));
     FastLED.show();
   }
@@ -221,42 +227,43 @@ void toggle_animation(
 
 void loop () {
   
-//  // CMD 1: Drive to World Waypoint (Driving)
-//  shifting_animation(); 
-//  shifting_animation();
-//  delay(300); 
-//
-//  // CMD 3: Idle / Standby
-//  pulse_animation(true);
-//  pulse_animation(true);
-//  delay(300); 
+// CMD 1: Drive to World Waypoint (Driving)
+  shifting_animation(); 
+  shifting_animation();
+  delay(300); 
 
-//  // CMD 2: Drive to World Waypoint (Seeking)
-//  shifting_animation();
-//  center_in_out_animation();
-//  center_in_out_animation();
-//  shifting_animation();
-//  toggle_animation();
-//  toggle_animation();
+// CMD 3: Idle / Standby
+  pulse_animation(true);
+  pulse_animation(true);
+  delay(300); 
 
-//  delay(300); 
+// CMD 2: Drive to World Waypoint (Seeking)
+  shifting_animation();
+  center_in_out_animation();
+  center_in_out_animation();
+  shifting_animation();
+  toggle_animation();
+  toggle_animation();
 
-//  // CMD 4: Track Object Waypoint (Tracking)
+  delay(300); 
+
+// CMD 4: Track Object Waypoint (Tracking)
   center_in_trailing_out();
-//  center_in_out_animation();
-//  center_in_out_animation();
-//  twinkle_animation(true);
-//  center_in_out_animation();
-//  center_in_out_animation();
-//  twinkle_animation(true);
-//  delay(300);
-//
-//  // CMD 5: Trick
-//  twinkle_animation();
-//  twinkle_animation();
-//  twinkle_animation();
-//  twinkle_animation();
-//  delay(300);
+  center_in_trailing_out();
+  center_in_out_animation();
+  center_in_out_animation();
+  center_in_trailing_out();
+  center_in_trailing_out();
+  center_in_out_animation();
+  center_in_out_animation();
+  delay(300);
+
+// CMD 5: Trick
+  twinkle_animation();
+  twinkle_animation();
+  twinkle_animation();
+  twinkle_animation();
+  delay(300);
 
 
   /**break sequence idea 1

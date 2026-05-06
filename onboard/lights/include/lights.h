@@ -28,15 +28,10 @@ rcl_subscription_t subscriber;
 rcl_node_t node;
 rclc_executor_t executor;
 
-//[VAR} datatype_missionmanager_msg msg
-    //check build / custom interfaces file for datatype
+int openFile(char* path);
 
-//[FUNC] callback 
+char readFromSerial(int fd);
 
-//[FUNC] send serial message to esp32
-
-//[FUNC] esp32_loop() <--- put in a separate arduino file to upload to esp 32??
-    // `
-
+void publishToTopic(char cmd);
 
 #endif
