@@ -1,16 +1,14 @@
 #include <micro_ros_arduino.h>
 
-#include <stdio.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
-#include <termios.h>
 
 #include <std_msgs/msg/int32.h>
 
 #include <FastLED.h>
-#define NUM_LEDS 21
+#define NUM_LEDS 15
 
 #define CYCLE_RATE 100
 #define DEFAULT_COLOR CRGB::White
@@ -19,29 +17,17 @@
 CRGB leds[NUM_LEDS];
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
+std_msgs__msg__Int32 empty_msg;
 rclc_executor_t executor;
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
-int fd;
 
 #define LED_PIN 12
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
-
-
-/*
------Thursday Action Items----
-
-figure out naming conventions
-
-figure out message datatypes from Mission Manager - use ints for now
-
-figure out how to set up mock system
-
-*/
 
 void error_loop(){
   while(1){
@@ -88,6 +74,37 @@ void dim_leds(int fade_rate = 100){
     i.fadeLightBy( fade_rate);
   }
   FastLED.show();
+}
+
+void trail_in(
+  int pos = 0,
+  fl::u32 primary_color = DEFAULT_COLOR
+) {
+
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = primary_color;
+  }
+
+  for(int i = 0; i <= pos; i++) {
+    leds[i] = CRGB::Black;
+    leds[NUM_LEDS - i] = CRGB::Black;
+  }
+}
+
+void trail_out(
+  int pos = 0,
+  fl::u32 primary_color = DEFAULT_COLOR
+) {
+  int middle = NUM_LEDS / 2;
+
+  for(int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB::Black;
+  }
+
+  for(int i = 0; i <= pos; i++) {
+    leds[middle - i] = primary_color;
+    leds[middle + i] = primary_color;
+  }
 }
 
 // ---- MAIN ANIMATIONS ----
@@ -153,28 +170,29 @@ void trailing_animation(
   fl::u32 primary_color = DEFAULT_COLOR, 
   int cycle_rate = CYCLE_RATE
 ){
-  for(int i = 0; i <= NUM_LEDS / 2; i++){
-    leds[i] = primary_color;
-    leds[NUM_LEDS - i] = primary_color;
-
-    FastLED.setBrightness((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4));
-
+  int outer_margin = 3;
+  int inner_margin = 1;
+  for(int i = outer_margin; i < (NUM_LEDS / 2) - inner_margin; i++){
+    FastLED.setBrightness(MAX_INTENSITY * sin(i * PI / 20));
+    trail_in(i);
     if(i == 0) delay(cycle_rate);
-    else delay((cycle_rate / 2.0) + (cycle_rate / (i * i * i * 2.0)));
-
+    else {
+      int in_delay = (cycle_rate/2.0) + (cycle_rate / (i * i * i * 2.0));
+      delay(in_delay);
+    }
     FastLED.show();
   }
 
-  delay(cycle_rate * 2);
   int middle = NUM_LEDS / 2;
 
-  for(int i = 0; i < NUM_LEDS / 2; i++){
-    leds[middle - i] = CRGB::Black;
-    leds[middle + i] = CRGB::Black;
-
-    FastLED.setBrightness(MAX_INTENSITY - ((MAX_INTENSITY * i * i) / (NUM_LEDS * NUM_LEDS / 4)));
-    delay((2 * cycle_rate / 3) - (2 * cycle_rate * i / (NUM_LEDS * 3)));
-
+  for(int i = inner_margin; i < (NUM_LEDS / 2) - outer_margin; i++){
+    trail_out(i);
+    if(i == 0) delay(cycle_rate);
+    else{
+      int out_delay = ((cycle_rate) + (cycle_rate / i));
+      delay(0.75 * out_delay);
+    }
+    FastLED.setBrightness(MAX_INTENSITY * cos(i * PI / 20));
     FastLED.show();
   }
 }
@@ -231,74 +249,54 @@ void publish_trick(){
 
 // ---- SERIAL HANDLING ----
 
-int open_file(char* path){
-    struct termios tty;
-    speed_t baud = 0010002; // This means baud rate of 115200
-    int fd;
-    
-    if ((fd = open(path, O_RDWR | O_NOCTTY | O_SYNC)) == -1) {
-        return -1;
-    }
-    
-    if (tcgetattr(fd, &tty) != 0) {
-        close(fd);
-        return -1;
-    }
+void setup_serial(){
+    int rxPin = 32; // GPIO4 works on esp32
+    int txPin = 33; // GPIO5 works on esp32
+    int baud = 115200; 
 
-    // Get and modify current options:
-    cfsetospeed(&tty, baud);
-    cfsetispeed(&tty, baud);
-    
-    // Configure 8N1, no flow control
-    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8 bits
-    tty.c_cflag &= ~PARENB; // no parity
-    tty.c_cflag &= ~CSTOPB; // 1 stop bit
-    tty.c_cflag &= ~CRTSCTS; // no hardware flow control
-    tty.c_cflag |= CLOCAL | CREAD; // enable receiver
-
-    tty.c_lflag = 0; // non-canonical mode
-    tty.c_oflag = 0; // no remapping, no delays
-    tty.c_iflag = 0; // no special handling
-
-    tty.c_cc[VMIN] = 0;  // non-blocking read
-    tty.c_cc[VTIME] = 10; // 1 second timeout (VTIME is in deciseconds)
-    
-    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-        close(fd);
-        return -1;
-    }   
-    return fd;
+    Serial1.begin(baud, SERIAL_8N1, rxPin, txPin); //SERIAL_8N1 -> 8 bits, no parity, 1 stop bit
 }
 
-char get_command_from_serial(){
-    ssize_t n = -1;
-    char c = '\0';
-    
-    while(c < '1' || c > '5'){ // keep reading until a command is recieved
-        n = read(fd->get_read_fd(), &c, 1); // read 1 byte from the serial port
-        if (n <= 0) return '0'; // return error if cannot read from file
+void get_command_from_serial(char* cmd){
+    int i = 0;
+    while(Serial1.available() > 0){ // keep reading while data available (terminates when null character met)
+        char n = Serial1.read(); // read 1 byte from the serial port
+        cmd[i] = n;
+        i++;
     }
-
-    return c; 
+    cmd[i] = '\0';
 }
 
-void publish_command_from_serial(int cmd){
-    switch(cmd){
-        case '1':
-            publish_driving();
-            break;
-        case '2':
-            publish_seeking();
-            break;
-        case '3':
-            publish_idle();
-            break;
-        case '4':
-            publish_tracking();
-            break;
-        default:
-            publish_trick();
-            break;
+int convert_command_to_int(char* cmd){
+  if(strcmp(cmd, "DriveToWorldWaypoint") == 0) return 1;
+  if(strcmp(cmd, "DriveToWorldWaypointSeeking") == 0) return 2;
+  if(strcmp(cmd, "Idle") == 0) return 3;
+  if(strcmp(cmd, "TrackObjectWaypoint") == 0) return 4;
+  if(strcmp(cmd, "DistanceTrick") == 0 || strcmp(cmd, "DurationTrick") == 0) return 5;
+  else return 0;
+}
+
+//returns total delay
+void publish_command_from_serial(){
+    switch(msg.data){
+      case 1:
+        publish_driving();
+        break;
+      case 2:
+        publish_seeking();
+        break;
+      case 3:
+        publish_idle();
+        break;
+      case 4:
+        publish_tracking();
+        break;
+      case 5:
+        publish_trick();
+        break;
+      default:
+        RCSOFTCHECK(rcl_publish(&publisher, &empty_msg, NULL));
+        break;
     }
 }
 
@@ -313,11 +311,6 @@ void setup() {
   delay(2000);
 
   allocator = rcl_get_default_allocator();
-
-  char* path = "example path"; // TO DO: SET TO ACTUAL SERIAL PORT
-  fd = open_file(path);
-
-  if(fd == -1) error_loop();
 
   //create init_options
   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
@@ -335,6 +328,8 @@ void setup() {
   // create executor
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
 
+  setup_serial();
+  empty_msg.data = 0;
   msg.data = 0;
 }
 
@@ -342,10 +337,17 @@ void loop() {
   delay(100);
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
 
-  char cmd;
+  delay(10000);
+  // const char* test_message = "Idle";
+  // Serial1.write(test_message);
 
+  int prev_cmd = 0;
+  
   while(1){
-    cmd = get_command_from_serial();
-    if(cmd != '0') publish_command_from_serial(cmd);
+    char cmd[100];
+    get_command_from_serial(cmd);
+    prev_cmd = convert_command_to_int(cmd);
+    if(prev_cmd != 0) msg.data = prev_cmd;
+    publish_command_from_serial();
   }
 }
