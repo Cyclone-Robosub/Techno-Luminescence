@@ -1,19 +1,18 @@
 ## Running Microros
 
-```colcon build```
+```Run with serial port (replace /dev/ttyACM0 with your device)```
+> distrobox create --image docker.io/microros/mciro-ros-agent:jazzy
 
-```source install/local_setup.bash ```
+> source /uros_ws/install/setup.bash
+``` replace /dev/ttyUSB0 with /dev/serial0 when working with pi```
+> ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0
 
-```ros2 run micro_ros_setup build_agent.sh```
-
-```source ~/uros_ws/install/local_setup.bash```
-
-```ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0```
 
 > Side notes:
-> * Assuming ROS2 is installed, microros can be installed following the README at https://github.com/micro-ROS/micro_ros_setup
+> * https://deepwiki.com/micro-ROS/micro-ROS-Agent/3.1-installation
 > * While the repo should have the microros agent "created", if not, run the following after ```source install``` command:  ```ros2 run micro_ros_setup create_agent_ws.sh```
 > * Refer to https://www.hackster.io/514301/micro-ros-on-esp32-using-arduino-ide-1360ca for troubleshooting microros on the esp32, remember to use the jazzy distro
+
 
 
 # Techno-Luminescence
