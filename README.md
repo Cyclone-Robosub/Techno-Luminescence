@@ -5,7 +5,7 @@
 
 > source /uros_ws/install/setup.bash
 ``` replace /dev/ttyUSB0 with /dev/serial0 when working with pi```
-> ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0
+> ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0 -D -R
 
 
 > Side notes:
