@@ -7,6 +7,7 @@
 
 #include <std_msgs/msg/int32.h>
 #include <std_msgs/msg/string.h>
+#include <std_msgs/msg/u_int8.h>
 
 #include "light_animations.h"
 
@@ -116,6 +117,20 @@ void set_mission_message(const char* text) {
 
 void mission_callback(const void *msgin) {
   set_mission_message((const std_msgs__msg__String *)msgin);
+}
+
+void manipulator_callback(const void *msgin) {
+  manipulator_msg.data = *((const std_msgs__msg__UInt8*) msgin);
+  /*
+    uint8_t manipulator_command = command->data;
+    if (is_valid_command(manipulator_command)) {
+        send_command_to_arduino(manipulator_command + OFFSET_TO_ONE); // Convert raw number to ASCII
+        usleep(2000000);  // 2000ms
+        send_command_to_arduino('r'); // Go back to reset position
+    }
+  */
+
+  // TBD : finish conversion of dropper
 }
 
 void microros_setup() {
