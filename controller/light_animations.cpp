@@ -5,17 +5,6 @@ void animations_setup() {
     FastLED.setBrightness(MAX_INTENSITY);
 }
 
-void error_loop(){
-  for(int i = 0; i < NUM_LEDS; i++){
-      leds[i] = CRGB::Red;
-  }
-  delay(1000);
-  for(int i = 0; i < NUM_LEDS; i++){
-      leds[i] = CRGB::Black;
-  }
-  delay(1000);
-}
-
 // ---- ANIMATION HELPERS ----
 
 void light_at_pos(
@@ -190,4 +179,15 @@ void twinkle_animation (
     delay(cycle_rate);
     dim_leds(40);
   } 
+}
+
+void error_animation() {
+  for(int i = 0; i < NUM_LEDS; i++){
+      leds[i] = DEFAULT_COLOR;
+  }
+  delay(1000);
+  for(int i = 0; i < NUM_LEDS; i++){
+      leds[i] = CRGB::Black;
+  }
+  delay(1000);
 }

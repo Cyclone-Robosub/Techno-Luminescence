@@ -10,8 +10,6 @@ CRGB leds[NUM_LEDS];
 
 void animations_setup();
 
-void error_loop();
-
 // ---- ANIMATION HELPERS ----
 
 void light_at_pos(int lit_position = 0, fl::u32 color = DEFAULT_COLOR);
@@ -35,4 +33,6 @@ void cross_animation(fl::u32 primary_color = DEFAULT_COLOR, fl::u32 secondary_co
 void trailing_animation(fl::u32 primary_color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE);
 
 void twinkle_animation (int spacing = 4, int cycle_rate = CYCLE_RATE / 4); 
+
+void error_animation();
 
