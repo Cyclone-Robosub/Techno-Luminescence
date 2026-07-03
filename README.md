@@ -44,6 +44,26 @@ We will use the FastLED library for controlling LED strips. Using ROS, will we t
 
 We will use a separate ESP-32 microprocessor so that if the main board goes offline, we can detect and display that.  
 
+## Compiling with arduino-cli
+Configure arduino-cli:
+```bash
+arduino-cli config init
+arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+arduino-cli core update-index
+arduino-cli core install esp32:esp32
+```
 
+Install micro-ros Arduino library:
+```bash
+# Use `arduino-cli config dump` to find library directory if not default
+git clone -b jazzy https://github.com/micro-ROS/micro_ros_arduino.git ~/Arduino/libraries/micro_ros_arduino 
+```
+
+Compile and upload:
+```bash
+# Use `arduino-cli board list` to find port of board
+arduino-cli compile --fqbn esp32:esp32:esp32 controller/
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 controller/
+```
 ## References
 - https://racheldebarros.com/how-to-use-fastled-with-arduino-to-program-led-strips/
