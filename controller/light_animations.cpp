@@ -183,7 +183,7 @@ void twinkle_animation (
 
 void error_animation() {
   for(int i = 0; i < NUM_LEDS; i++){
-      leds[i] = DEFAULT_COLOR;
+      leds[i] = CRGB::Red;
   }
   delay(1000);
   for(int i = 0; i < NUM_LEDS; i++){

@@ -77,20 +77,21 @@ void publish_heartbeat(bool error){
     if(error) error_animation();
 }
 
-void publish_mission_command(const char* cmd){
-  if(strcmp(cmd, "DriveToWorldWaypoint") == 0){
+void publish_mission_command(){
+  const char* cmd = strcpy(mission_msg.data.data, cmd);
+  if (strcmp(cmd, "DriveToWorldWaypoint") == 0) {
     publish_driving();
   }
-  else if(strcmp(cmd, "DriveToWorldWaypointSeeking") == 0){
+  else if (strcmp(cmd, "DriveToWorldWaypointSeeking") == 0) {
     publish_seeking();
   }
-  else if(strcmp(cmd, "Idle") == 0){
+  else if (strcmp(cmd, "Idle") == 0) {
     publish_idle();
   }
-  else if(strcmp(cmd, "TrackObjectWaypoint") == 0){
+  else if (strcmp(cmd, "TrackObjectWaypoint") == 0) {
     publish_tracking();
   }
-  else if(strcmp(cmd, "DistanceTrick") == 0 || strcmp(cmd, "DurationTrick") == 0){
+  else if (strcmp(cmd, "DistanceTrick") == 0 || strcmp(cmd, "DurationTrick") == 0) {
     publish_trick();
   }
   else return;
@@ -121,19 +122,29 @@ void write_to_heartbeat(const char* text) {
   heartbeat_msg.data.size = strlen(text);
 }
 
+bool all_heartbeats_valid() {
+  return echo_heartbeat_msg 
+        && mux_heartbeat_msg 
+        && ctrl_heartbeat_msg 
+        && cli_heartbeat_msg 
+        && thrust_int_heartbeat_msg;
+}
+
 void heartbeat_callback(const char* error_msg, const char* resolve_msg, const bool prev_msg, const bool* curr_msg) {
   if (!curr_msg) {
     write_to_heartbeat(error_msg);
     publish_heartbeat(ERROR);
   }
   else{
-    if (!prev_msg && curr_msg) {
+    if (!prev_msg && curr_msg) { // heartbeat comes back on
       write_to_heartbeat(resolve_msg);
+      publish_heartbeat(ERROR);
     }
-    else {
+
+    if (all_heartbeats_valid()) { 
       write_to_heartbeat("");
+      publish_heartbeat(NO_ERROR);
     }
-    publish_heartbeat(NO_ERROR);
   }
 }
 
@@ -184,14 +195,7 @@ void thrust_interface_callback(const void *msgin) {
 
 void manipulator_callback(const void *msgin) {
   manipulator_msg.data = *((const std_msgs__msg__UInt8*) msgin);
-  
-  if (manipulator_msg.data != 1 && manipulator_msg.data != 2) return; // exits if invalid message
-  
-  if (manipulator_msg.data == 1) myServo.write(releaseAngle1);
-  else myServo.write(releaseAngle2);
-
-  usleep(2000000);  // 2000ms
-  myServo.write(restAngle); // Go back to reset position
+  dropper_response(manipulator_msg.data);
 }
 
 /* Setups */
@@ -350,7 +354,7 @@ void loop() {
   
   while(1){
     if(heartbeat_msg.size == NO_ERROR) { // size == 0 == false
-      publish_mission_command(mission_msg.data.data);
+      publish_mission_command();
     }
 
     // TBD: Go Switch Code

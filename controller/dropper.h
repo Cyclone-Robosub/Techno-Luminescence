@@ -9,3 +9,5 @@ const int releaseAngle1 = 90;
 const int releaseAngle2 = 68;
 
 void dropper_setup();
+
+void dropper_response(int cmd);
