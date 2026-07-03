@@ -1,4 +1,4 @@
-#include <Servo.h>
+#include <ESP32Servo.h>
 #include "dropper.h"
 
 void dropper_setup() {
