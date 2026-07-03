@@ -1,6 +1,5 @@
+#include <Arduino.h>
 #include <go_switch.h>
-
-#define GO_SWITCH_PIN 27
 
 volatile bool go_switch_triggered = false;
 

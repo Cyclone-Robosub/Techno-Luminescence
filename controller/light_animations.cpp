@@ -1,5 +1,7 @@
 #include "light_animations.h"
 
+static CRGB leds[NUM_LEDS];
+
 void animations_setup() {
     FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
     FastLED.setBrightness(MAX_INTENSITY);
@@ -8,8 +10,8 @@ void animations_setup() {
 // ---- ANIMATION HELPERS ----
 
 void light_at_pos(
-  int lit_position = 0,
-  fl::u32 color = DEFAULT_COLOR
+    int lit_position, 
+    fl::u32 color
 ) {
   for(int i = 0; i < NUM_LEDS; i++){
     if(((i - lit_position) % 4) == 0) leds[i] = DEFAULT_COLOR;
@@ -32,7 +34,7 @@ fl::u32 rand_color(){
   return colors[i];
 }
 
-void dim_leds(int fade_rate = 100){
+void dim_leds(int fade_rate){
   for (auto &i:leds) {
     i.fadeLightBy( fade_rate);
   }
@@ -40,8 +42,8 @@ void dim_leds(int fade_rate = 100){
 }
 
 void trail_in(
-  int pos = 0,
-  fl::u32 primary_color = DEFAULT_COLOR
+  int pos,
+  fl::u32 primary_color
 ) {
 
   for(int i = 0; i < NUM_LEDS; i++){
@@ -55,8 +57,8 @@ void trail_in(
 }
 
 void trail_out(
-  int pos = 0,
-  fl::u32 primary_color = DEFAULT_COLOR
+  int pos,
+  fl::u32 primary_color
 ) {
   int middle = NUM_LEDS / 2;
 
@@ -73,7 +75,7 @@ void trail_out(
 // ---- MAIN ANIMATIONS ----
 
 void shifting_animation(
-  int cycle_rate = CYCLE_RATE * 1.5
+  int cycle_rate
 ) {
   for (int i = 0; i < 12; i++){
     light_at_pos(i);
@@ -82,8 +84,8 @@ void shifting_animation(
 }
 
 void pulse_animation (
-  fl::u32 color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE
+  fl::u32 color,
+  int cycle_rate
 ) {
   volatile float intensity;
   volatile float cycle_index = 0;
@@ -102,9 +104,9 @@ void pulse_animation (
 }
 
 void cross_animation(
-  fl::u32 primary_color = DEFAULT_COLOR, 
-  fl::u32 secondary_color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE / 2
+  fl::u32 primary_color,
+  fl::u32 secondary_color,
+  int cycle_rate
 ){
   for(int i = 0; i < NUM_LEDS / 2; i++){
     leds[i] = primary_color;
@@ -130,8 +132,8 @@ void cross_animation(
 }
 
 void trailing_animation(
-  fl::u32 primary_color = DEFAULT_COLOR, 
-  int cycle_rate = CYCLE_RATE
+  fl::u32 primary_color,
+  int cycle_rate
 ){
   int outer_margin = 3;
   int inner_margin = 1;
@@ -161,8 +163,8 @@ void trailing_animation(
 }
 
 void twinkle_animation (
-  int spacing = 4, 
-  int cycle_rate = CYCLE_RATE / 4
+  int spacing,
+  int cycle_rate
 ) {
   int index = 0;  
   int tracker = 0;

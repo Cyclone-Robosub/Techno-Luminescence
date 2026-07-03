@@ -1,10 +1,11 @@
+#pragma once
+
 #include <FastLED.h>
 #define NUM_LEDS 15
 
 #define CYCLE_RATE 100
 #define DEFAULT_COLOR CRGB::White
 #define MAX_INTENSITY 20
-CRGB leds[NUM_LEDS];
 
 #define LED_PIN 12
 
@@ -35,4 +36,3 @@ void trailing_animation(fl::u32 primary_color = DEFAULT_COLOR, int cycle_rate = 
 void twinkle_animation (int spacing = 4, int cycle_rate = CYCLE_RATE / 4); 
 
 void error_animation();
-

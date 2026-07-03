@@ -1,18 +1,20 @@
 #include <ESP32Servo.h>
 #include "dropper.h"
 
+static Servo dropperServo;
+
 void dropper_setup() {
     Serial.begin(9600); // Start serial communication
-    myServo.attach(servoPin); // Attach the servo to pin 9
-    myServo.write(restAngle); // Set initial position to restAngle
+    dropperServo.attach(SERVO_PIN); // Attach the servo to pin 9
+    dropperServo.write(RESET_ANGLE); // Set initial position to restAngle
 }
 
 void dropper_response(int cmd) {
     if (cmd != 1 && cmd != 2) return; // exits if invalid message
   
-    if (cmd == 1) myServo.write(releaseAngle1);
-    else myServo.write(releaseAngle2);
+    if (cmd == 1) dropperServo.write(RELEASE_ANGLE_1);
+    else dropperServo.write(RELEASE_ANGLE_2);
 
-    usleep(2000000);  // 2000ms
-    myServo.write(restAngle); // Go back to reset position
+    usleep(2000000);  // 2000ms 
+    dropperServo.write(RESET_ANGLE); // Go back to reset position
 }

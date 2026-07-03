@@ -20,18 +20,18 @@ rcl_subscription_t echo_heartbeat_subscriber; //"echo_heartbeat"
 rcl_subscription_t mux_heartbeat_subscriber; //"mux_heartbeat"
 rcl_subscription_t ctrl_heartbeat_subscriber; //"ctrl_heartbeat"
 rcl_subscription_t cli_heartbeat_subscriber; //"cli_heartbeat"
-rcl_subscription_t thust_int_heartbeat_subscriber; //"thrust_interface_heartbeat"
+rcl_subscription_t thrust_int_heartbeat_subscriber; //"thrust_interface_heartbeat"
 rcl_subscription_t manipulator_subscriber; //"manipulator_cmd"
 
 std_msgs__msg__String mission_msg;
 std_msgs__msg__String heartbeat_msg;
 std_msgs__msg__UInt8 manipulator_msg;
 
-const bool echo_heartbeat_msg;
-const bool mux_heartbeat_msg;
-const bool ctrl_heartbeat_msg;
-const bool cli_heartbeat_msg;
-const bool thrust_int_heartbeat_msg;
+bool echo_heartbeat_msg;
+bool mux_heartbeat_msg;
+bool ctrl_heartbeat_msg;
+bool cli_heartbeat_msg;
+bool thrust_int_heartbeat_msg;
 
 #define ERROR true
 #define NO_ERROR false
@@ -41,7 +41,7 @@ rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t light_controller_node;
 
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
+#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_animation();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
 // ---- PUBLISHING COMMANDS ----
@@ -131,7 +131,7 @@ bool all_heartbeats_valid() {
         && thrust_int_heartbeat_msg;
 }
 
-void heartbeat_callback(const char* error_msg, const char* resolve_msg, const bool prev_msg, const bool* curr_msg) {
+void heartbeat_callback(const char* error_msg, const char* resolve_msg, const bool prev_msg, bool curr_msg) {
   if (!curr_msg) {
     write_to_heartbeat(error_msg);
     publish_heartbeat(ERROR);
@@ -153,7 +153,7 @@ void echo_callback(const void *msgin) {
   const char* error_msg = "Error: Echo Down\n";
   const char* resolve_msg = "Resolved: Echo Up\n";
   const bool prev_msg = echo_heartbeat_msg;
-  echo_heartbeat_msg = (const bool *)msgin;
+  echo_heartbeat_msg = ((const std_msgs__msg__Bool *)msgin)->data;
 
   heartbeat_callback(error_msg, resolve_msg, prev_msg, echo_heartbeat_msg);
 }
@@ -162,7 +162,7 @@ void mux_callback(const void *msgin) {
   const char* error_msg = "Error: Mux Down\n";
   const char* resolve_msg = "Resolved: Mux Up\n";
   const bool prev_msg = mux_heartbeat_msg;
-  mux_heartbeat_msg = (const bool *)msgin;
+  mux_heartbeat_msg = ((const std_msgs__msg__Bool *)msgin)->data;
 
   heartbeat_callback(error_msg, resolve_msg, prev_msg, mux_heartbeat_msg);
 }
@@ -171,7 +171,7 @@ void ctrl_callback(const void *msgin) {
   const char* error_msg = "Error: Ctrl Down\n";
   const char* resolve_msg = "Resolved: Ctrl Up\n";
   const bool prev_msg = ctrl_heartbeat_msg;
-  ctrl_heartbeat_msg = (const bool *)msgin;
+  ctrl_heartbeat_msg = ((const std_msgs__msg__Bool *)msgin)->data;
 
   heartbeat_callback(error_msg, resolve_msg, prev_msg, ctrl_heartbeat_msg);
 }
@@ -180,7 +180,7 @@ void cli_callback(const void *msgin) {
   const char* error_msg = "Error: CLI Down\n";
   const char* resolve_msg = "Resolved: CLI Up\n";
   const bool prev_msg = cli_heartbeat_msg;
-  cli_heartbeat_msg = (const bool *)msgin;
+  cli_heartbeat_msg = ((const std_msgs__msg__Bool *)msgin)->data;
 
   heartbeat_callback(error_msg, resolve_msg, prev_msg, cli_heartbeat_msg);
 }
@@ -189,13 +189,13 @@ void thrust_interface_callback(const void *msgin) {
   const char* error_msg = "Error: Thrust Interface Down\n";
   const char* resolve_msg = "Resolved: Thrust Interface Up\n";
   const bool prev_msg = thrust_int_heartbeat_msg;
-  thrust_int_heartbeat_msg = (const bool *)msgin;
+  thrust_int_heartbeat_msg = ((const std_msgs__msg__Bool *)msgin)->data;
 
   heartbeat_callback(error_msg, resolve_msg, prev_msg, thrust_int_heartbeat_msg);
 }
 
 void manipulator_callback(const void *msgin) {
-  manipulator_msg.data = *((const std_msgs__msg__UInt8*) msgin);
+manipulator_msg.data = ((const std_msgs__msg__UInt8*) msgin)->data;
   dropper_response(manipulator_msg.data);
 }
 
@@ -208,7 +208,7 @@ void string_messages_setup() { // memory allocation for string messages
 
   char heartbeat_buffer[64];
   heartbeat_msg.data.data     = heartbeat_buffer;
-  heartbeat_msg.data.capacity = sizeof(heatbeat_buffer);
+  heartbeat_msg.data.capacity = sizeof(heartbeat_buffer);
   heartbeat_msg.data.size     = 0;
 }
 
@@ -280,7 +280,7 @@ void create_subscribers() {
   RCCHECK(rclc_subscription_init_default(
     &manipulator_subscriber,
     &light_controller_node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Uint8),
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, UInt8),
     "manipulator_cmd"));
 }
 
@@ -346,7 +346,7 @@ void setup() {
 
   dropper_setup();
   microros_setup();
-  go_switch_setup()
+  go_switch_setup();
   setup_serial();
 }
 
@@ -355,7 +355,7 @@ void loop() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
   
   while(1){
-    if(heartbeat_msg.size == NO_ERROR) { // size == 0 == false
+    if(heartbeat_msg.data.size == NO_ERROR) { // size == 0 == false
       publish_mission_command();
     }
 
