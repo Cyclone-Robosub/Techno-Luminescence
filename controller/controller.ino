@@ -11,6 +11,7 @@
 
 #include "light_animations.h"
 #include "dropper.h"
+#include "go_switch.h"
 
 rcl_publisher_t lights_publisher;
 
@@ -345,6 +346,7 @@ void setup() {
 
   dropper_setup();
   microros_setup();
+  go_switch_setup()
   setup_serial();
 }
 
@@ -357,6 +359,6 @@ void loop() {
       publish_mission_command();
     }
 
-    // TBD: Go Switch Code
+    go_switch_handling();
   }
 }
