@@ -19,18 +19,6 @@ MissionCommand mission_commands[] = {
   {"DurationTrick",               animate_twinkle},
 };
 
-void publish_mission_command(){
-  RCSOFTCHECK(rcl_publish(&lights_publisher, &mission_msg, NULL));
-
-  const char* cmd = mission_msg.data.data;
-  for (auto& mission_command : mission_commands) {
-    if (strcmp(cmd, mission_command.name) == 0) {
-      mission_command.animate();
-      return;
-    }
-  }
-}
-
 // ---- SERIAL HANDLING ----
 
 void setup_serial(){
@@ -57,12 +45,10 @@ void setup() {
 }
 
 void loop() {
-  RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
-
-  while(1){
-    if (heartbeat_checks()) continue;
-    
-    publish_mission_command()
-    go_switch_handling();
+  if (heartbeat_checks()) { 
+    animate_error();
   }
+  
+  publish_mission_command()
+  go_switch_handling();
 }
