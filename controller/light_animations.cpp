@@ -74,7 +74,7 @@ void trail_out(
 
 // ---- MAIN ANIMATIONS ----
 
-void shifting_animation(
+void animate_shifting(
   int cycle_rate
 ) {
   for (int i = 0; i < 12; i++){
@@ -83,7 +83,7 @@ void shifting_animation(
   }
 }
 
-void pulse_animation (
+void animate_pulse (
   fl::u32 color,
   int cycle_rate
 ) {
@@ -103,7 +103,7 @@ void pulse_animation (
   }
 }
 
-void cross_animation(
+void animate_cross(
   fl::u32 primary_color,
   fl::u32 secondary_color,
   int cycle_rate
@@ -131,7 +131,7 @@ void cross_animation(
   }
 }
 
-void trailing_animation(
+void animate_trailing(
   fl::u32 primary_color,
   int cycle_rate
 ){
@@ -162,7 +162,7 @@ void trailing_animation(
   }
 }
 
-void twinkle_animation (
+void animate_twinkle (
   int spacing,
   int cycle_rate
 ) {
@@ -183,7 +183,13 @@ void twinkle_animation (
   } 
 }
 
-void error_animation() {
+void animate_seeking(){
+    animate_shifting();
+    animate_cross();
+    animate_cross();
+}
+
+void animate_error() {
   for(int i = 0; i < NUM_LEDS; i++){
       leds[i] = CRGB::Red;
   }

@@ -1,5 +1,5 @@
-#include <string>
 #include <chrono>
+#include <cstring>
 
 #include "microros.h"
 #include "dropper.h"
@@ -7,13 +7,13 @@
 class HeartbeatChannel {
     public:
       rcl_subscription_t subscriber;
-      std::string topic;
-      extern std_msgs__msg__Empty msg;
+      const char* topic;
+      std_msgs__msg__Empty msg;
       std::chrono::time_point<std::chrono::steady_clock> recent_heartbeat;
       bool no_heartbeat;
 
-    HeartbeatChannel(std::string topic)
-      : subscriber{}, msg{}, topic(std::move(topic)),
+    HeartbeatChannel(const char* topic)
+      : subscriber{}, msg{}, topic(topic),
         recent_heartbeat(std::chrono::steady_clock::now()), no_heartbeat(false)
     {}
 
@@ -22,7 +22,7 @@ class HeartbeatChannel {
     }
 };
 
-HeartbeatChannel heartbeat_channels[HEARTBEAT_COUNT] = {
+HeartbeatChannel heartbeat_channels[6] = {
   HeartbeatChannel("mission_manager_heartbeat"),
   HeartbeatChannel("echo_heartbeat"),
   HeartbeatChannel("mux_heartbeat"),
@@ -31,35 +31,44 @@ HeartbeatChannel heartbeat_channels[HEARTBEAT_COUNT] = {
   HeartbeatChannel("thrust_interface_heartbeat"),
 };
 
-void heartbeat_checks() {
+int heartbeat_checks() {
     auto current_time = std::chrono::steady_clock::now();
     bool all_heartbeats_valid = true;
+    char status_buffer[64];
     for(auto& heartbeat : heartbeat_channels) {
         if (current_time - heartbeat.recent_heartbeat > std::chrono::seconds(1)) {
-            heartbeat.no_heartbeat = true;
-            all_heartbeats_valid = false;
-            write_to_heartbeat("Error: " << heartbeat.topic);
-            publish_heartbeat(ERROR);
+          // no heartbeat error
+          heartbeat.no_heartbeat = true;
+          all_heartbeats_valid = false;
+          strcpy(status_buffer, "Error: ");
+          strcat(status_buffer, heartbeat.topic);
+          write_to_heartbeat(status_buffer);
+          publish_heartbeat(ERROR);
         } else if (heartbeat.no_heartbeat) {
-            heartbeat.no_heartbeat = false;
-            write_to_heartbeat("Resolved: " << heartbeat.topic);
-            publish_heartbeat(ERROR);
+          // no heartbeat resolved 
+          heartbeat.no_heartbeat = false;
+          strcpy(status_buffer, "Resolved: ");
+          strcat(status_buffer, heartbeat.topic);
+          write_to_heartbeat(status_buffer);
+          publish_heartbeat(ERROR);
         }
     }
 
     if(all_heartbeats_valid) {
-        write_to_heartbeat("");
-        publish_heartbeat(NO_ERROR);
+      write_to_heartbeat("");
+      publish_heartbeat(NO_ERROR);
+      return 0;
     }
+    return 1;
 }
 
+rcl_subscription_t mission_subscriber;
+rcl_subscription_t manipulator_subscriber;
 rcl_publisher_t lights_publisher;
-rcl_subscriber_t manipulator_subscriber;
-rcl_subscriber_t mission_subscriber;
 
+std_msgs__msg__String mission_msg;
 std_msgs__msg__UInt8 manipulator_msg;
 std_msgs__msg__String heartbeat_msg;
-std_msgs__msg__String mission_msg;
 
 rclc_executor_t executor;
 rclc_support_t support;
@@ -68,15 +77,19 @@ rcl_node_t light_controller_node;
 
 void publish_heartbeat(bool error){
     RCSOFTCHECK(rcl_publish(&lights_publisher, &heartbeat_msg, NULL));
-    if(error) error_animation();
+    if(error) animate_error();
 }
 
 /* Callbacks*/
 
+void heartbeat_context_callback(const void *msgin, void *context) {
+  static_cast<HeartbeatChannel*>(context)->callback(msgin);
+}
+
 void mission_callback(const void *msgin) {
-  std::string text = (const char *)msgin;
-  strcpy(mission_msg.data.data, text.c_str());
-  mission_msg.data.size = text.size();
+  const std_msgs__msg__String* msg = (const std_msgs__msg__String*) msgin;
+  strcpy(mission_msg.data.data, msg->data.data);
+  mission_msg.data.size = strlen(mission_msg.data.data);
 }
 
 void manipulator_callback(const void *msgin) {
@@ -84,19 +97,18 @@ void manipulator_callback(const void *msgin) {
   dropper_response(manipulator_msg.data);
 }
 
-void write_to_heartbeat(std::string text) {
-  strcpy(heartbeat_msg.data.data, text.c_str());
-  heartbeat_msg.data.size = text.size();
+void write_to_heartbeat(const char* text) {
+  strcpy(heartbeat_msg.data.data, text);
+  heartbeat_msg.data.size = strlen(text);
 }
 
-/* Setups */
 void string_messages_setup() { // memory allocation for string messages
-  char mission_buffer[64];
+  static char mission_buffer[64];
   mission_msg.data.data     = mission_buffer;  // pointer to the buffer
   mission_msg.data.capacity = sizeof(mission_buffer);
   mission_msg.data.size     = 0;               // current length, starts empty
 
-  char heartbeat_buffer[64];
+  static char heartbeat_buffer[64];
   heartbeat_msg.data.data     = heartbeat_buffer;
   heartbeat_msg.data.capacity = sizeof(heartbeat_buffer);
   heartbeat_msg.data.size     = 0;
@@ -109,7 +121,7 @@ void create_subscribers() {
         &heartbeat.subscriber,
         &light_controller_node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Empty),
-        &heartbeat.topic));
+        heartbeat.topic));
   }
   
   // mission subscriber
@@ -130,11 +142,12 @@ void create_subscribers() {
 void add_subscriptions_to_executor() {
   // add heartbeat subscribers
   for (auto& heartbeat : heartbeat_channels) {
-    RCCHECK(rclc_executor_add_subscription(
+    RCCHECK(rclc_executor_add_subscription_with_context(
       &executor,
       &heartbeat.subscriber,
       &heartbeat.msg,
-      &heartbeat.callback,
+      &heartbeat_context_callback,
+      &heartbeat,
       ON_NEW_DATA));
   }
 
@@ -175,7 +188,7 @@ void microros_setup() {
   create_subscribers();
 
   // create executor
-  RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 8, &allocator));
 
   add_subscriptions_to_executor();
 }

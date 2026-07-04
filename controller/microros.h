@@ -18,12 +18,8 @@
 #define ERROR true
 #define NO_ERROR false
 
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_animation();}}
+#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){animate_error();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
-rcl_publisher_t lights_publisher;
-rclc_executor_t executor;
-
-extern std_msgs__msg__String mission_msg;
-
 void microros_setup();
+int heartbeat_checks();

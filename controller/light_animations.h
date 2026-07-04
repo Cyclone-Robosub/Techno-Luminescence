@@ -25,14 +25,16 @@ void trail_out(int pos = 0, fl::u32 primary_color = DEFAULT_COLOR);
 
 // ---- MAIN ANIMATIONS ----
 
-void shifting_animation(int cycle_rate = CYCLE_RATE * 1.5);
+void animate_shifting(int cycle_rate = CYCLE_RATE * 1.5);
 
-void pulse_animation (fl::u32 color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE);
+void animate_pulse (fl::u32 color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE);
 
-void cross_animation(fl::u32 primary_color = DEFAULT_COLOR, fl::u32 secondary_color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE / 2);
+void animate_cross(fl::u32 primary_color = DEFAULT_COLOR, fl::u32 secondary_color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE / 2);
 
-void trailing_animation(fl::u32 primary_color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE);
+void animate_trailing(fl::u32 primary_color = DEFAULT_COLOR, int cycle_rate = CYCLE_RATE);
 
-void twinkle_animation (int spacing = 4, int cycle_rate = CYCLE_RATE / 4); 
+void animate_twinkle (int spacing = 4, int cycle_rate = CYCLE_RATE / 4);
 
-void error_animation();
+void animate_seeking();
+
+void animate_error();
