@@ -4,7 +4,6 @@
 static Servo dropperServo;
 
 void dropper_setup() {
-    Serial.begin(9600); // Start serial communication
     dropperServo.attach(SERVO_PIN); // Attach the servo to pin 9
     dropperServo.write(RESET_ANGLE); // Set initial position to restAngle
 }

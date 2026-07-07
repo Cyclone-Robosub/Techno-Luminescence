@@ -4,9 +4,8 @@
 const int NUM_LEDS = 15;
 
 const int CYCLE_RATE = 100;
-const int DEFAULT_COLOR = CRGB::White;
 const int MAX_INTENSITY = 20;
-
+const fl::u32 DEFAULT_COLOR = CRGB::White;
 const int LED_PIN = 12;
 
 void animations_setup();

@@ -45,10 +45,23 @@ void setup() {
 }
 
 void loop() {
-  if (heartbeat_checks()) { 
+  microros_spin();
+
+  if (handle_heartbeat_timeout()) {
     animate_error();
   }
-  
+
   publish_mission_command()
   go_switch_handling();
 }
+
+
+// const char* publish_mission_command() {
+//   const char* cmd = mission_msg.data.data;
+//   for (auto& mission_command : mission_commands) {
+//     if (strcmp(cmd, mission_command.name) == 0) {
+//       mission_command.animate();
+//       return;
+//     }
+//   }
+// }

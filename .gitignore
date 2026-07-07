@@ -120,3 +120,4 @@ cython_debug/
 
 # Macos extended attr
 .DS_Store
+.zed/settings.json

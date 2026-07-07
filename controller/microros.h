@@ -19,4 +19,5 @@
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
 void microros_setup();
-int heartbeat_checks();
+void microros_spin();
+int handle_heartbeat_timeout();

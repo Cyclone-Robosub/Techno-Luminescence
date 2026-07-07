@@ -31,20 +31,23 @@ static HeartbeatChannel heartbeat_channels[6] = {
   HeartbeatChannel("thrust_interface_heartbeat"),
 };
 
+const auto HEARTBEAT_TIMEOUT = std::chrono::seconds(1);
+
 rcl_subscription_t mission_subscriber;
 rcl_subscription_t manipulator_subscriber;
+rcl_publisher_t heartbeat_status_publisher;
+
+rclc_support_t support;
+rcl_allocator_t allocator;
+rclc_executor_t executor;
+rcl_node_t esp32_node;
 
 std_msgs__msg__String mission_msg;
 std_msgs__msg__UInt8 manipulator_msg;
 std_msgs__msg__String heartbeat_msg;
 
-rclc_support_t support;
-rcl_allocator_t allocator;
-rcl_publisher_t esp32_publisher;
-rclc_executor_t executor;
-rcl_node_t esp32_node;
-
-const auto HEARTBEAT_TIMEOUT = std::chrono::seconds(1);
+static char mission_buffer[64];
+static char heartbeat_buffer[64];
 
 // --- CALLBACKS ---
 
@@ -139,7 +142,7 @@ void publish_heartbeat_status (HeartbeatStatus hb_status, const char* topic) {
       break;
   }
 
-  RCSOFTCHECK(rcl_publish(&esp32_publisher, &heartbeat_msg, NULL));
+  RCSOFTCHECK(rcl_publish(&heartbeat_status_publisher, &heartbeat_msg, NULL));
 }
 
 int handle_heartbeat_timeout() {
@@ -159,31 +162,17 @@ int handle_heartbeat_timeout() {
       }
     }
 
-    if (!all_heartbeats_valid) {
-      return 1;
-    }
+    if (!all_heartbeats_valid) return 1;
     
     publish_heartbeat_status(HeartbeatStatus::Healthy, nullptr);
     return 0;  
 }
 
-// const char* publish_mission_command() {
-//   const char* cmd = mission_msg.data.data;
-//   for (auto& mission_command : mission_commands) {
-//     if (strcmp(cmd, mission_command.name) == 0) {
-//       mission_command.animate();
-//       return;
-//     }
-//   }
-// }
-
 void string_messages_setup() { // memory allocation for string messages
-  static char mission_buffer[64];
   mission_msg.data.data     = mission_buffer;  // pointer to the buffer
   mission_msg.data.capacity = sizeof(mission_buffer);
   mission_msg.data.size     = 0;               // current length, starts empty
 
-  static char heartbeat_buffer[64];
   heartbeat_msg.data.data     = heartbeat_buffer;
   heartbeat_msg.data.capacity = sizeof(heartbeat_buffer);
   heartbeat_msg.data.size     = 0;
@@ -201,15 +190,18 @@ void microros_setup() {
 
   // create publisher
   RCCHECK(rclc_publisher_init_default(
-    &esp32_publisher,
+    &heartbeat_status_publisher,
     &esp32_node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
-    "esp32_publisher"));
+    "heartbeat_status"));
 
   create_subscribers();
 
   // create executor
   RCCHECK(rclc_executor_init(&executor, &support.context, 8, &allocator));
   add_subscriptions_to_executor();
+}
+
+void microros_spin() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
 }
