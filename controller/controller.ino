@@ -55,8 +55,9 @@ void animate_cmd(const char* cmd) {
 
 void loop() {
   microros_spin();
-  go_switch_handling();
-
+  go_switch_update();
+  dropper_update();
+  
   if (handle_heartbeat_timeout()) {
     animate_leds(Animation::Error);
   } else {

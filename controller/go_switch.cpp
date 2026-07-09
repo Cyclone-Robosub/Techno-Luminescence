@@ -13,7 +13,7 @@ void go_switch_setup() {
   attachInterrupt(digitalPinToInterrupt(GO_SWITCH_PIN), go_switch_isr, RISING);
 }
 
-void go_switch_handling() {
+void go_switch_update() {
   if (!go_switch_triggered) return;
   go_switch_triggered = false;
   publish_go_signal(true);

@@ -2,6 +2,8 @@
 #include "dropper.h"
 
 static Servo dropperServo;
+static unsigned long dropperStartTime;
+static bool dropperActive;
 
 void dropper_setup() {
     dropperServo.attach(SERVO_PIN); // Attach the servo to pin 9
@@ -11,9 +13,15 @@ void dropper_setup() {
 void dropper_response(int cmd) {
     if (cmd != 1 && cmd != 2) return; // exits if invalid message
   
-    if (cmd == 1) dropperServo.write(RELEASE_ANGLE_1);
-    else dropperServo.write(RELEASE_ANGLE_2);
+    dropperServo.write(cmd == 1 ? RELEASE_ANGLE_1 : RELEASE_ANGLE_2);
+    dropperStartTime = millis();
+    dropperActive = false;
+}
 
-    usleep(2000000);  // 2000ms 
-    dropperServo.write(RESET_ANGLE); // Go back to reset position
+void dropper_update() {
+  if (!dropperActive) return;
+  if (millis() - dropperStartTime < DROPPER_DURATION_MS) return;
+  
+  dropperServo.write(RESET_ANGLE);
+  dropperActive = false;
 }
