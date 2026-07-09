@@ -12,6 +12,7 @@
 #include <std_msgs/msg/empty.h>
 #include <std_msgs/msg/string.h>
 #include <std_msgs/msg/u_int8.h>
+#include <std_msgs/msg/bool.h>
 
 #include "light_animations.h"
 
@@ -21,3 +22,5 @@
 void microros_setup();
 void microros_spin();
 int handle_heartbeat_timeout();
+const char* get_mission_msg();
+void publish_go_signal(bool triggered);

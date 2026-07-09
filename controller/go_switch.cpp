@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <go_switch.h>
+#include "microros.h"
 
 volatile bool go_switch_triggered = false;
 
@@ -15,5 +16,5 @@ void go_switch_setup() {
 void go_switch_handling() {
   if (!go_switch_triggered) return;
   go_switch_triggered = false;
-  // TODO: publish to node
+  publish_go_signal(true);
 }

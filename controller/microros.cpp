@@ -36,6 +36,7 @@ const auto HEARTBEAT_TIMEOUT = std::chrono::seconds(1);
 rcl_subscription_t mission_subscriber;
 rcl_subscription_t manipulator_subscriber;
 rcl_publisher_t heartbeat_status_publisher;
+rcl_publisher_t go_signal_publisher;
 
 rclc_support_t support;
 rcl_allocator_t allocator;
@@ -45,6 +46,7 @@ rcl_node_t esp32_node;
 std_msgs__msg__String mission_msg;
 std_msgs__msg__UInt8 manipulator_msg;
 std_msgs__msg__String heartbeat_msg;
+std_msgs__msg__Bool go_signal_msg;
 
 static char mission_buffer[64];
 static char heartbeat_buffer[64];
@@ -195,6 +197,13 @@ void microros_setup() {
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
     "heartbeat_status"));
 
+  // create go switch publisher
+  RCCHECK(rclc_publisher_init_default(
+    &go_signal_publisher,
+    &esp32_node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
+    "go_signal"));
+
   create_subscribers();
 
   // create executor
@@ -204,4 +213,13 @@ void microros_setup() {
 
 void microros_spin() {
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
+}
+
+const char* get_mission_msg() {
+  return mission_msg.data.data;
+}
+
+void publish_go_signal(bool triggered) {
+  go_signal_msg.data = triggered;
+  RCSOFTCHECK(rcl_publish(&go_signal_publisher, &go_signal_msg, NULL));
 }
