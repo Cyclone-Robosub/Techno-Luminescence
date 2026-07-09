@@ -7,16 +7,16 @@
 
 struct MissionCommand {
   const char* name;
-  void (*animate)();
+  Animation animation;
 };
 
 MissionCommand mission_commands[] = {
-  {"DriveToWorldWaypoint",        animate_shifting},
-  {"DriveToWorldWaypointSeeking", animate_seeking},
-  {"Idle",                        animate_pulse},
-  {"TrackObjectWaypoint",         animate_trailing},
-  {"DistanceTrick",               animate_twinkle},
-  {"DurationTrick",               animate_twinkle},
+  {"DriveToWorldWaypoint",        Animation::Shifting},
+  {"DriveToWorldWaypointSeeking", Animation::Cross},
+  {"Idle",                        Animation::Pulse},
+  {"TrackObjectWaypoint",         Animation::Trailing},
+  {"DistanceTrick",               Animation::Twinkle},
+  {"DurationTrick",               Animation::Twinkle},
 };
 
 // ---- SERIAL HANDLING ----
@@ -44,24 +44,23 @@ void setup() {
   setup_serial();
 }
 
-void loop() {
-  microros_spin();
-
-  if (handle_heartbeat_timeout()) {
-    animate_error();
+void animate_cmd(const char* cmd) {
+  for (auto& mission_command : mission_commands) {
+    if (strcmp(cmd, mission_command.name) == 0) {
+      animate_leds(mission_command.animation);
+      return;
+    }
   }
-
-  publish_mission_command()
-  go_switch_handling();
 }
 
+void loop() {
+  microros_spin();
+  go_switch_handling();
 
-// const char* publish_mission_command() {
-//   const char* cmd = mission_msg.data.data;
-//   for (auto& mission_command : mission_commands) {
-//     if (strcmp(cmd, mission_command.name) == 0) {
-//       mission_command.animate();
-//       return;
-//     }
-//   }
-// }
+  if (handle_heartbeat_timeout()) {
+    animate_leds(Animation::Error);
+  } else {
+    animate_cmd(get_mission_msg());
+  }
+  
+}

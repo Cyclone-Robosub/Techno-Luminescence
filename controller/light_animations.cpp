@@ -10,12 +10,12 @@ void animations_setup() {
 // ---- ANIMATION HELPERS ----
 
 void light_at_pos(
-    int lit_position, 
+    int lit_position,
     fl::u32 color
 ) {
   for(int i = 0; i < NUM_LEDS; i++){
     if(((i - lit_position) % 4) == 0) leds[i] = DEFAULT_COLOR;
-    else leds[i] = CRGB::Black; 
+    else leds[i] = CRGB::Black;
   }
   FastLED.show();
 }
@@ -23,14 +23,14 @@ void light_at_pos(
 fl::u32 rand_color(){
   int colors_size = 6;
   fl::u32 colors[] = {
-    CRGB::Red, 
-    CRGB::DarkOrange, 
-    CRGB::Green, 
-    CRGB::HotPink, 
-    CRGB::Blue, 
+    CRGB::Red,
+    CRGB::DarkOrange,
+    CRGB::Green,
+    CRGB::HotPink,
+    CRGB::Blue,
     CRGB::Purple
   };
-  int i = rand() % (colors_size + 1); 
+  int i = rand() % (colors_size + 1);
   return colors[i];
 }
 
@@ -74,128 +74,138 @@ void trail_out(
 
 // ---- MAIN ANIMATIONS ----
 
-void animate_shifting(
-  int cycle_rate
-) {
-  for (int i = 0; i < 12; i++){
-    light_at_pos(i);
-    delay(cycle_rate);
-  }
+static void step_shifting(int &step) {
+  light_at_pos(step, DEFAULT_COLOR);
+  step = (step + 1) % 12;
 }
 
-void animate_pulse (
-  fl::u32 color,
-  int cycle_rate
-) {
-  volatile float intensity;
-  volatile float cycle_index = 0;
-  
-  while (cycle_index < 2 * PI) {
-    intensity = (-1* abs(sin(cycle_index)) + 1) * MAX_INTENSITY;
-    cycle_index += PI / 64; 
+static void step_pulse(int &step) {
+  float cycle_angle = step * (PI / 64.0f);
+  float intensity = (-1 * fabsf(sinf(cycle_angle)) + 1) * MAX_INTENSITY;
 
-    for (int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = color; 
-      FastLED.setBrightness(intensity);
-    }
-    FastLED.show();
-    delay(cycle_rate / 4);
-  }
+  for (int i = 0; i < NUM_LEDS; i++) leds[i] = DEFAULT_COLOR;
+  FastLED.setBrightness(intensity);
+  FastLED.show();
+
+  step = (step + 1) % 128; // cycle from 0 to 2pi
 }
 
-void animate_cross(
-  fl::u32 primary_color,
-  fl::u32 secondary_color,
-  int cycle_rate
-){
-  for(int i = 0; i < NUM_LEDS / 2; i++){
-    leds[i] = primary_color;
-    leds[NUM_LEDS - i] = secondary_color;
-    FastLED.show();
-    delay(cycle_rate);
-    leds[i] = CRGB::Black;
-    leds[NUM_LEDS - i] = CRGB::Black;
-    FastLED.show();
-  }
-
+static void step_cross(int &step, int &phase) {
+  int half = NUM_LEDS / 2;
   int middle = NUM_LEDS / 2;
+  bool lit = (step % 2 == 0);
+  int i = step / 2;
 
-  for(int i = 0; i < NUM_LEDS / 2; i++){
-    leds[middle - i] = secondary_color;
-    leds[middle + i] = primary_color;
-    FastLED.show();
-    delay(cycle_rate);
-    leds[middle - i] = CRGB::Black;
-    leds[middle + i] = CRGB::Black;
-    FastLED.show();
+  if (phase == 0) {
+    leds[i] = lit ? DEFAULT_COLOR : CRGB::Black;
+    leds[NUM_LEDS - i] = lit ? DEFAULT_COLOR : CRGB::Black;
+  } else {
+    leds[middle - i] = lit ? DEFAULT_COLOR : CRGB::Black;
+    leds[middle + i] = lit ? DEFAULT_COLOR : CRGB::Black;
+  }
+  FastLED.show();
+
+  step++;
+  if (step >= half * 2) {
+    step = 0;
+    phase = (phase + 1) % 2;
   }
 }
 
-void animate_trailing(
-  fl::u32 primary_color,
-  int cycle_rate
-){
-  int outer_margin = 3;
-  int inner_margin = 1;
-  for(int i = outer_margin; i < (NUM_LEDS / 2) - inner_margin; i++){
-    FastLED.setBrightness(MAX_INTENSITY * sin(i * PI / 20));
-    trail_in(i);
-    if(i == 0) delay(cycle_rate);
-    else {
-      int in_delay = (cycle_rate/2.0) + (cycle_rate / (i * i * i * 2.0));
-      delay(in_delay);
-    }
-    FastLED.show();
-  }
+static void step_trailing(int &step, int &phase) {
+  const int outer_margin = 3;
+  const int inner_margin = 1;
+  const int in_end = (NUM_LEDS / 2) - inner_margin;
+  const int out_end = (NUM_LEDS / 2) - outer_margin;
 
-  int middle = NUM_LEDS / 2;
-
-  for(int i = inner_margin; i < (NUM_LEDS / 2) - outer_margin; i++){
-    trail_out(i);
-    if(i == 0) delay(cycle_rate);
-    else{
-      int out_delay = ((cycle_rate) + (cycle_rate / i));
-      delay(0.75 * out_delay);
-    }
-    FastLED.setBrightness(MAX_INTENSITY * cos(i * PI / 20));
+  if (phase == 0) {
+    int i = outer_margin + step;
+    FastLED.setBrightness(MAX_INTENSITY * sinf(i * PI / 20));
+    trail_in(i, DEFAULT_COLOR);
     FastLED.show();
+
+    step++;
+    if (outer_margin + step >= in_end) {
+      step = 0;
+      phase = 1;
+    }
+  } else {
+    int i = inner_margin + step;
+    trail_out(i, DEFAULT_COLOR);
+    FastLED.setBrightness(MAX_INTENSITY * cosf(i * PI / 20));
+    FastLED.show();
+
+    step++;
+    if (inner_margin + step >= out_end) {
+      step = 0;
+      phase = 0;
+    }
   }
 }
 
-void animate_twinkle (
-  int spacing,
-  int cycle_rate
-) {
-  int index = 0;  
-  int tracker = 0;
-  int offset = 0; 
+static void step_twinkle(int &step) {
+  const int spacing = 4;
+  int tracker = step * spacing;
+  int offset = tracker / NUM_LEDS;
+  int index = tracker % NUM_LEDS + offset;
 
+  dim_leds(40);
+  leds[index] = rand_color();
+  FastLED.show();
+
+  step = (step + 1) % NUM_LEDS;
+}
+
+static void step_error(int &phase) {
   for (int i = 0; i < NUM_LEDS; i++) {
-    tracker = i * spacing;
-    offset = floor(tracker / NUM_LEDS);
-    index = tracker % NUM_LEDS + offset; 
-
-    leds[index] = rand_color();
-
-    FastLED.show();
-    delay(cycle_rate);
-    dim_leds(40);
-  } 
+    leds[i] = (phase == 0) ? CRGB::Red : CRGB::Black;
+  }
+  FastLED.show();
+  phase = (phase + 1) % 2;
 }
 
-void animate_seeking(){
-    animate_shifting();
-    animate_cross();
-    animate_cross();
+// ---- MAIN ENTRY POINT ----
+
+static unsigned long get_step_time(Animation animation) {
+  switch (animation) {
+    case Animation::Shifting: return CYCLE_RATE * 1.5;
+    case Animation::Pulse:    return CYCLE_RATE / 4;
+    case Animation::Cross:    return CYCLE_RATE / 2;
+    case Animation::Trailing: return CYCLE_RATE;
+    case Animation::Twinkle:  return CYCLE_RATE / 4;
+    case Animation::Error:    return CYCLE_RATE * 3;
+    default:                  return CYCLE_RATE;
+  }
 }
 
-void animate_error() {
-  for(int i = 0; i < NUM_LEDS; i++){
-      leds[i] = CRGB::Red;
+void animate_leds(Animation animation) {
+  static Animation current = Animation::None;
+  static unsigned long last_frame_time = 0;
+  static unsigned long animation_step_time = 0;
+  static int step = 0;
+  static int phase = 0;
+
+  if (animation != current) {
+    current = animation;
+    animation_step_time = get_step_time(animation);
+    step = 0;
+    phase = 0;
+    last_frame_time = 0;
   }
-  delay(1000);
-  for(int i = 0; i < NUM_LEDS; i++){
-      leds[i] = CRGB::Black;
+
+  if (animation == Animation::None) return;
+
+  unsigned long now = millis();
+  if (now - last_frame_time < animation_step_time) return;
+  last_frame_time = now;
+
+  switch (animation) {
+    case Animation::Shifting: step_shifting(step); break;
+    case Animation::Pulse:    step_pulse(step); break;
+    case Animation::Cross:    step_cross(step, phase); break;
+    case Animation::Trailing: step_trailing(step, phase); break;
+    case Animation::Twinkle:  step_twinkle(step); break;
+    case Animation::Error:    step_error(phase); break;
+    case Animation::None:     break;
   }
-  delay(1000);
 }
