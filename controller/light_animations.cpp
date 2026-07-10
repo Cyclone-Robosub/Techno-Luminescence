@@ -3,15 +3,15 @@
 static CRGB leds[NUM_LEDS];
 
 void animations_setup() {
-    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(MAX_INTENSITY);
+  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
+  FastLED.setBrightness(MAX_INTENSITY);
 }
 
 // ---- ANIMATION HELPERS ----
 
 void light_at_pos(
-    int lit_position,
-    fl::u32 color
+  int lit_position,
+  fl::u32 color
 ) {
   for(int i = 0; i < NUM_LEDS; i++){
     if(((i - lit_position) % 4) == 0) leds[i] = DEFAULT_COLOR;

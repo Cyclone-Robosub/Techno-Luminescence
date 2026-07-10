@@ -51,6 +51,12 @@ std_msgs__msg__Bool go_signal_msg;
 static char mission_buffer[64];
 static char heartbeat_buffer[64];
 
+// override arduino_transport_open() to increase baud rate
+extern "C" bool arduino_transport_open(struct uxrCustomTransport * transport) {
+  Serial.begin(921600);
+  return true;
+}
+
 // --- CALLBACKS ---
 
 void heartbeat_context_callback(const void *msgin, void *context) {
@@ -212,7 +218,7 @@ void microros_setup() {
 }
 
 void microros_spin() {
-  RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
+  RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(0)));
 }
 
 const char* get_mission_msg() {
