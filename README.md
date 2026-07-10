@@ -1,3 +1,6 @@
+# Techno-Luminescence
+A Human Machine Interface (HMI) for Underwater Autonomous Vehicles (AUVs) using LED strips for information communication. 
+
 ## Running Microros
 
 ```Run with serial port (replace /dev/ttyACM0 with your device)```
