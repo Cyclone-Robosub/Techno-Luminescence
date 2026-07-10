@@ -3,20 +3,23 @@ A Human Machine Interface (HMI) for Underwater Autonomous Vehicles (AUVs) using 
 
 ## Running Microros
 
-```colcon build```
+```Run with serial port (replace /dev/ttyACM0 with your device)```
+> distrobox create --image docker.io/microros/mciro-ros-agent:jazzy
 
-```source install/local_setup.bash ```
+> source /uros_ws/install/setup.bash
+``` replace /dev/ttyUSB0 with /dev/serial0 when working with pi```
+> ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0 -D -R
 
-```ros2 run micro_ros_setup build_agent.sh```
-
-```source ~/uros_ws/install/local_setup.bash```
-
-```ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyUSB0```
 
 > Side notes:
-> * Assuming ROS2 is installed, microros can be installed following the README at https://github.com/micro-ROS/micro_ros_setup
+> * https://deepwiki.com/micro-ROS/micro-ROS-Agent/3.1-installation
 > * While the repo should have the microros agent "created", if not, run the following after ```source install``` command:  ```ros2 run micro_ros_setup create_agent_ws.sh```
 > * Refer to https://www.hackster.io/514301/micro-ros-on-esp32-using-arduino-ide-1360ca for troubleshooting microros on the esp32, remember to use the jazzy distro
+
+
+
+# Techno-Luminescence
+A Human Machine Interface (HMI) for Underwater Autonomous Vehicles (AUVs) using LED strips for information communication. 
 
 ## Project Context & Objective
 During AUV operations, the vehicle is frequently changing through the following states
@@ -44,6 +47,26 @@ We will use the FastLED library for controlling LED strips. Using ROS, will we t
 
 We will use a separate ESP-32 microprocessor so that if the main board goes offline, we can detect and display that.  
 
+## Compiling with arduino-cli
+Configure arduino-cli:
+```bash
+arduino-cli config init
+arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+arduino-cli core update-index
+arduino-cli core install esp32:esp32
+```
 
+Install micro-ros Arduino library:
+```bash
+# Use `arduino-cli config dump` to find library directory if not default
+git clone -b jazzy https://github.com/micro-ROS/micro_ros_arduino.git ~/Arduino/libraries/micro_ros_arduino 
+```
+
+Compile and upload:
+```bash
+# Use `arduino-cli board list` to find port of board
+arduino-cli compile --fqbn esp32:esp32:esp32 controller/
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 controller/
+```
 ## References
 - https://racheldebarros.com/how-to-use-fastled-with-arduino-to-program-led-strips/
