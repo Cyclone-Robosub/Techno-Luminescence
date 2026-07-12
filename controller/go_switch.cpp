@@ -9,7 +9,7 @@ void go_switch_isr() {
 }
 
 void go_switch_setup() {
-  pinMode(GO_SWITCH_PIN, INPUT);
+  pinMode(GO_SWITCH_PIN, INPUT_PULLDOWN);
   attachInterrupt(digitalPinToInterrupt(GO_SWITCH_PIN), go_switch_isr, RISING);
 }
 
