@@ -34,7 +34,6 @@ void serial_setup(){
 
 void setup() {
   set_microros_transports();
-  delay(2000);
   // serial_setup();
   animations_setup();
   dropper_setup();

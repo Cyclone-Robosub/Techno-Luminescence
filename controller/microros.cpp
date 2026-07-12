@@ -1,4 +1,3 @@
-#include <chrono>
 #include <cstring>
 
 #include "microros.h"
@@ -9,16 +8,16 @@ class HeartbeatChannel {
       rcl_subscription_t subscriber;
       const char* topic;
       std_msgs__msg__Empty msg;
-      std::chrono::time_point<std::chrono::steady_clock> last_timestamp;
+      unsigned long last_timestamp;
       bool timed_out;
 
     HeartbeatChannel(const char* topic)
       : subscriber{}, msg{}, topic(topic),
-        last_timestamp(std::chrono::steady_clock::now()), timed_out(false)
+        last_timestamp(millis()), timed_out(false)
     {}
 
     void callback(const void *msgin){
-        last_timestamp = std::chrono::steady_clock::now();
+        last_timestamp = millis();
     }
 };
 
@@ -31,7 +30,7 @@ static HeartbeatChannel heartbeat_channels[6] = {
   HeartbeatChannel("thrust_interface_heartbeat"),
 };
 
-const auto HEARTBEAT_TIMEOUT = std::chrono::seconds(1);
+const unsigned long HEARTBEAT_TIMEOUT_MS = 1000;
 
 rcl_subscription_t mission_subscriber;
 rcl_subscription_t manipulator_subscriber;
@@ -154,12 +153,12 @@ void publish_heartbeat_status (HeartbeatStatus hb_status, const char* topic) {
 }
 
 int handle_heartbeat_timeout() {
-    auto current_time = std::chrono::steady_clock::now();
+    unsigned long current_time = millis();
     bool all_heartbeats_valid = true;
 
     for (auto& heartbeat : heartbeat_channels) {
-      auto timeSinceHeartbeat = current_time - heartbeat.last_timestamp;
-      if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT) {
+      unsigned long timeSinceHeartbeat = current_time - heartbeat.last_timestamp;
+      if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT_MS) {
         heartbeat.timed_out = true;
         all_heartbeats_valid = false;
         publish_heartbeat_status(HeartbeatStatus::Error, heartbeat.topic);
