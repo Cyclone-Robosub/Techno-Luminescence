@@ -3,6 +3,8 @@
 #include "microros.h"
 #include "dropper.h"
 
+#include <rmw_microros/rmw_microros.h>
+
 class HeartbeatChannel {
     public:
       rcl_subscription_t subscriber;
@@ -189,6 +191,11 @@ void microros_setup() {
   allocator = rcl_get_default_allocator();
   string_messages_setup();
 
+  // wait until microros agent 
+  while (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
+    delay(25);
+  }
+
   //create init_options
   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
 
@@ -217,6 +224,17 @@ void microros_setup() {
 }
 
 void microros_spin() {
+  static unsigned long last_agent_ping = millis();
+  unsigned long now = millis();
+
+  // poll agent connection. restart ESP on fail.
+  if (now - last_agent_ping > 500) {
+    last_agent_ping = now;
+    if (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
+      esp_system_abort("Agent connection lost."); 
+    }
+  }
+
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(0)));
 }
 
