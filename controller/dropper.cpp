@@ -6,16 +6,16 @@ static unsigned long dropperStartTime;
 static bool dropperActive;
 
 void dropper_setup() {
-    dropperServo.attach(SERVO_PIN); // Attach the servo to pin 9
-    dropperServo.write(RESET_ANGLE); // Set initial position to restAngle
+  dropperServo.attach(SERVO_PIN);
+  dropperServo.write(RESET_ANGLE);
 }
 
 void dropper_response(int cmd) {
-    if (cmd != 1 && cmd != 2) return; // exits if invalid message
-  
-    dropperServo.write(cmd == 1 ? RELEASE_ANGLE_1 : RELEASE_ANGLE_2);
-    dropperStartTime = millis();
-    dropperActive = false;
+  if (cmd != 1 && cmd != 2) return; // exits if invalid message
+
+  dropperServo.write(cmd == 1 ? RELEASE_ANGLE_1 : RELEASE_ANGLE_2);
+  dropperStartTime = millis();
+  dropperActive = true;
 }
 
 void dropper_update() {

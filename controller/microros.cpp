@@ -231,7 +231,7 @@ void microros_spin() {
   if (now - last_agent_ping > 500) {
     last_agent_ping = now;
     if (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
-      esp_system_abort("Agent connection lost."); 
+      abort(); 
     }
   }
 
