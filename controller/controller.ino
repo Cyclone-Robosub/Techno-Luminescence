@@ -54,9 +54,9 @@ void loop() {
   microros_spin();
   go_switch_update();
   dropper_update();
-  if (handle_heartbeat_timeout()) {
-    animate_leds(Animation::Error);
-  } else {
-    animate_cmd(get_mission_msg());
-  }
+  // if (handle_heartbeat_timeout()) {
+  //   animate_leds(Animation::Error);
+  // } else {
+  //   animate_cmd(get_mission_msg());
+  // }
 }

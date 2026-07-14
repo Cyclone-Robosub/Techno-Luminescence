@@ -156,12 +156,22 @@ static void step_twinkle(int &step) {
   step = (step + 1) % NUM_LEDS;
 }
 
-static void step_error(int &phase) {
+static void step_error(int &step) {
   for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = (phase == 0) ? CRGB::Red : CRGB::Black;
+    leds[i] = (step == 0) ? CRGB::Red : CRGB::Black;
   }
   FastLED.show();
-  phase = (phase + 1) % 2;
+  step = (step + 1) % 2;
+}
+
+static void step_rgb(int &step) {
+  const uint8_t led_hue_step = 128 / NUM_LEDS; // 256 for full rainbow coverage
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CHSV((i * led_hue_step + step) & 0xFF, 255, 255);
+  }
+  FastLED.show();
+
+  step = (step + 1) & 0xFF;
 }
 
 // ---- MAIN ENTRY POINT ----
@@ -174,6 +184,7 @@ static unsigned long get_step_time(Animation animation) {
     case Animation::Trailing: return CYCLE_RATE;
     case Animation::Twinkle:  return CYCLE_RATE / 4;
     case Animation::Error:    return CYCLE_RATE * 3;
+    case Animation::Rgb:      return CYCLE_RATE / 8;
     default:                  return CYCLE_RATE;
   }
 }
@@ -206,6 +217,7 @@ void animate_leds(Animation animation) {
     case Animation::Trailing: step_trailing(step, phase); break;
     case Animation::Twinkle:  step_twinkle(step); break;
     case Animation::Error:    step_error(phase); break;
+    case Animation::Rgb:      step_rgb(step); break;
     case Animation::None:     break;
   }
 }

@@ -2,6 +2,7 @@
 
 #include "microros.h"
 #include "dropper.h"
+#include "light_animations.h"
 
 #include <rmw_microros/rmw_microros.h>
 
@@ -193,6 +194,7 @@ void microros_setup() {
 
   // wait until microros agent 
   while (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
+    // animate_leds(Animation::Rgb);
     delay(25);
   }
 

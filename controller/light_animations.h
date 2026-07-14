@@ -8,7 +8,7 @@ const int MAX_INTENSITY = 20;
 const fl::u32 DEFAULT_COLOR = CRGB::White;
 const int LED_PIN = 27;
 
-enum class Animation { None, Shifting, Pulse, Cross, Trailing, Twinkle, Error };
+enum class Animation { None, Shifting, Pulse, Cross, Trailing, Twinkle, Error, Rgb };
 
 void animations_setup();
 void animate_leds(Animation animation);
