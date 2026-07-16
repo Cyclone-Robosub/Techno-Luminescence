@@ -17,6 +17,7 @@ MissionCommand mission_commands[] = {
   {"TrackObjectWaypoint",         Animation::Trailing},
   {"DistanceTrick",               Animation::Twinkle},
   {"DurationTrick",               Animation::Twinkle},
+  {"RGB",                         Animation::Rgb},
 };
 
 // ---- SERIAL HANDLING ----
@@ -57,6 +58,6 @@ void loop() {
   // if (handle_heartbeat_timeout()) {
   //   animate_leds(Animation::Error);
   // } else {
-  //   animate_cmd(get_mission_msg());
+    animate_cmd(get_mission_msg());
   // }
 }

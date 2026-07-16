@@ -20,25 +20,22 @@ void light_at_pos(
   FastLED.show();
 }
 
-fl::u32 rand_color(){
-  int colors_size = 6;
-  fl::u32 colors[] = {
-    CRGB::Red,
-    CRGB::DarkOrange,
-    CRGB::Green,
-    CRGB::HotPink,
-    CRGB::Blue,
-    CRGB::Purple
-  };
-  int i = rand() % (colors_size + 1);
-  return colors[i];
+CHSV rand_color(){
+  return CHSV(rand() % 255, 255, 255);
+}
+
+void fill_leds(fl::u32 color) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = color;
+  }
+  FastLED.show();
 }
 
 void dim_leds(int fade_rate){
   for (auto &i:leds) {
     i.fadeLightBy( fade_rate);
   }
-  FastLED.show();
+  // FastLED.show();
 }
 
 void trail_in(
@@ -93,20 +90,22 @@ static void step_pulse(int &step) {
 static void step_cross(int &step, int &phase) {
   int half = NUM_LEDS / 2;
   int middle = NUM_LEDS / 2;
-  bool lit = (step % 2 == 0);
-  int i = step / 2;
+
+  if (step == 0) {
+    for (int i = 0; i < NUM_LEDS; i++) leds[i] = CRGB::Black;
+  }
 
   if (phase == 0) {
-    leds[i] = lit ? DEFAULT_COLOR : CRGB::Black;
-    leds[NUM_LEDS - i] = lit ? DEFAULT_COLOR : CRGB::Black;
+    leds[step] = DEFAULT_COLOR;
+    leds[NUM_LEDS - step] = DEFAULT_COLOR;
   } else {
-    leds[middle - i] = lit ? DEFAULT_COLOR : CRGB::Black;
-    leds[middle + i] = lit ? DEFAULT_COLOR : CRGB::Black;
+    leds[middle - step] = DEFAULT_COLOR;
+    leds[middle + step] = DEFAULT_COLOR;
   }
   FastLED.show();
 
   step++;
-  if (step >= half * 2) {
+  if (step >= half) {
     step = 0;
     phase = (phase + 1) % 2;
   }
@@ -149,8 +148,8 @@ static void step_twinkle(int &step) {
   int offset = tracker / NUM_LEDS;
   int index = tracker % NUM_LEDS + offset;
 
-  dim_leds(40);
-  leds[index] = rand_color();
+  dim_leds(30);
+  leds[index] = CHSV(rand() % 255, 255, 255);
   FastLED.show();
 
   step = (step + 1) % NUM_LEDS;
@@ -165,7 +164,7 @@ static void step_error(int &step) {
 }
 
 static void step_rgb(int &step) {
-  const uint8_t led_hue_step = 128 / NUM_LEDS; // 256 for full rainbow coverage
+  const uint8_t led_hue_step = 88 / NUM_LEDS; // 256 for full rainbow coverage
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CHSV((i * led_hue_step + step) & 0xFF, 255, 255);
   }
@@ -202,6 +201,7 @@ void animate_leds(Animation animation) {
     step = 0;
     phase = 0;
     last_frame_time = 0;
+    FastLED.setBrightness(MAX_INTENSITY);
   }
 
   if (animation == Animation::None) return;

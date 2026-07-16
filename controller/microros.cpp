@@ -193,10 +193,18 @@ void microros_setup() {
   string_messages_setup();
 
   // wait until microros agent 
-  while (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
-    // animate_leds(Animation::Rgb);
-    delay(25);
+  unsigned long last_ping_check = 0;
+  bool connected = false;
+  while (!connected) {
+    animate_leds(Animation::Rgb);
+    unsigned long now = millis();
+    if (now - last_ping_check >= 5000) {
+      last_ping_check = now;
+      connected = (rmw_uros_ping_agent(10, 1) == RMW_RET_OK);
+    }
   }
+
+  fill_leds(CRGB::Chartreuse);
 
   //create init_options
   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
@@ -233,6 +241,7 @@ void microros_spin() {
   if (now - last_agent_ping > 500) {
     last_agent_ping = now;
     if (rmw_uros_ping_agent(100, 1) != RMW_RET_OK) {
+      fill_leds(CRGB::Red);
       abort(); 
     }
   }

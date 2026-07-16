@@ -1,12 +1,12 @@
 #pragma once
 
 #include <FastLED.h>
-const int NUM_LEDS = 15;
+const int NUM_LEDS = 22;
 
 const int CYCLE_RATE = 100;
-const int MAX_INTENSITY = 20;
-const fl::u32 DEFAULT_COLOR = CRGB::White;
-const int LED_PIN = 27;
+const int MAX_INTENSITY = 100;
+const fl::u32 DEFAULT_COLOR = CRGB::Magenta;
+const int LED_PIN = 13;
 
 enum class Animation { None, Shifting, Pulse, Cross, Trailing, Twinkle, Error, Rgb };
 
@@ -17,7 +17,9 @@ void animate_leds(Animation animation);
 
 void light_at_pos(int lit_position = 0, fl::u32 color = DEFAULT_COLOR);
 
-fl::u32 rand_color();
+CHSV rand_color();
+
+void fill_leds(fl::u32 color = DEFAULT_COLOR);
 
 void dim_leds(int fade_rate = 100);
 
