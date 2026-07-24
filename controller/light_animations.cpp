@@ -173,18 +173,35 @@ static void step_rgb(int &step) {
   step = (step + 1) & 0xFF;
 }
 
+static void step_comb_jelly(int &step, int &phase) {
+  static constexpr uint8_t led_hue_step = 176 / NUM_LEDS;
+
+  dim_leds(60);
+
+  uint8_t hue = (step * led_hue_step + phase) & 0xFF;
+  leds[step] = CHSV(hue, 255, 255);
+
+  FastLED.show();
+
+  step = (step + 1) % NUM_LEDS;
+  if (step == 0) {
+    phase = (phase + 20) & 0xFF;
+  }
+}
+
 // ---- MAIN ENTRY POINT ----
 
 static unsigned long get_step_time(Animation animation) {
   switch (animation) {
-    case Animation::Shifting: return CYCLE_RATE * 1.5;
-    case Animation::Pulse:    return CYCLE_RATE / 4;
-    case Animation::Cross:    return CYCLE_RATE / 2;
-    case Animation::Trailing: return CYCLE_RATE;
-    case Animation::Twinkle:  return CYCLE_RATE / 4;
-    case Animation::Error:    return CYCLE_RATE * 3;
-    case Animation::Rgb:      return CYCLE_RATE / 8;
-    default:                  return CYCLE_RATE;
+    case Animation::Shifting:  return CYCLE_RATE * 1.5;
+    case Animation::Pulse:     return CYCLE_RATE / 4;
+    case Animation::Cross:     return CYCLE_RATE / 2;
+    case Animation::Trailing:  return CYCLE_RATE;
+    case Animation::Twinkle:   return CYCLE_RATE / 4;
+    case Animation::Error:     return CYCLE_RATE * 3;
+    case Animation::Rgb:       return CYCLE_RATE / 8;
+    case Animation::CombJelly: return CYCLE_RATE / 6;
+    default:                   return CYCLE_RATE;
   }
 }
 
@@ -211,13 +228,14 @@ void animate_leds(Animation animation) {
   last_frame_time = now;
 
   switch (animation) {
-    case Animation::Shifting: step_shifting(step); break;
-    case Animation::Pulse:    step_pulse(step); break;
-    case Animation::Cross:    step_cross(step, phase); break;
-    case Animation::Trailing: step_trailing(step, phase); break;
-    case Animation::Twinkle:  step_twinkle(step); break;
-    case Animation::Error:    step_error(phase); break;
-    case Animation::Rgb:      step_rgb(step); break;
-    case Animation::None:     break;
+    case Animation::Shifting:  step_trailing(step, phase); break;
+    case Animation::Pulse:     step_trailing(step, phase); break;
+    case Animation::Cross:     step_trailing(step, phase); break;
+    case Animation::Trailing:  step_trailing(step, phase); break;
+    case Animation::Twinkle:   step_twinkle(step); break;
+    case Animation::Error:     step_error(phase); break;
+    case Animation::Rgb:       step_rgb(step); break;
+    case Animation::CombJelly: step_comb_jelly(step, phase); break;
+    case Animation::None:      break;
   }
 }
